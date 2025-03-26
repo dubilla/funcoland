@@ -19,8 +19,11 @@ model User {
   email String @unique
   emailVerified DateTime? @map(name: "email_verified")
   image String?
+  password String?
   accounts Account[]
   sessions Session[]
+  queues GameQueue[]
+  userGames UserGame[]
 }
 
 model Account {
@@ -37,4 +40,64 @@ model Session {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   user  User  @relation(fields: [userId], references: [id])
+}
+
+model Game {
+  id              String      @id @default(cuid())
+  title           String
+  apiId           String?     @unique
+  apiSource       String?     // Source of API data (IGDB, RAWG, etc.)
+  coverImageUrl   String?
+  releaseDate     DateTime?
+  publisher       String?
+  developer       String?
+  description     String?
+  hltbMainTime    Int?        // Minutes to beat main story
+  hltbCompletionTime Int?     // Minutes for completionist run
+  userGames       UserGame[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model UserGame {
+  id              String      @id @default(cuid())
+  userId          String
+  gameId          String
+  progressPercent Int         @default(0)  // 0-100
+  status          GameStatus  @default(BACKLOG)
+  notes           String?
+  rating          Int?        // 1-10
+  queueId         String?
+  queuePosition   Int?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game            Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  queue           GameQueue?  @relation(fields: [queueId], references: [id])
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([userId, gameId])
+}
+
+model GameQueue {
+  id              String      @id @default(cuid())
+  name            String
+  userId          String
+  description     String?
+  isDefault       Boolean     @default(false)
+  games           UserGame[]
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@unique([userId, name])
+}
+
+enum GameStatus {
+  BACKLOG
+  CURRENTLY_PLAYING
+  COMPLETED
+  ABANDONED
+  WISHLIST
 }
