@@ -4,7 +4,7 @@
   "env": {
     "browser": true,
     "node": true,
-    "es2021": true
+    "jest": true
   },
   "rules": {
     "no-trailing-spaces": "error",
@@ -15,13 +15,5 @@
     "jsx-a11y/click-events-have-key-events": "warn",
     "jsx-a11y/no-static-element-interactions": "warn",
     "react/no-unescaped-entities": "warn"
-  },
-  "overrides": [
-    {
-      "files": ["**/*.test.js", "**/*.test.ts", "**/*.test.jsx", "**/*.test.tsx"],
-      "env": {
-        "jest": true
-      }
-    }
-  ]
+  }
 }
