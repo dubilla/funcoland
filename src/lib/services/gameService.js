@@ -37,10 +37,6 @@ export async function searchGames(query) {
     console.error('Error searching IGDB:', error);
     return dbGames; // Return only DB results if external API fails
   }
-  
-  // This code is now unreachable because we return inside the try/catch
-  // Keeping just in case we revert back to the original implementation
-  return dbGames;
 }
 
 /**

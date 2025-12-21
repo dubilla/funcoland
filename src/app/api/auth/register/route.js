@@ -72,6 +72,7 @@ export async function POST(request) {
     console.log('Default queue created:', queue.id);
     
     // Return the user without the password
+    // eslint-disable-next-line no-unused-vars
     const { password: _, ...userWithoutPassword } = user;
     
     return NextResponse.json(

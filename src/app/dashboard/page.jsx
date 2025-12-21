@@ -43,6 +43,7 @@ export default async function Dashboard() {
   });
   
   // Get recent games
+  // eslint-disable-next-line no-unused-vars
   const recentGames = await prisma.userGame.findMany({
     where: {
       userId,

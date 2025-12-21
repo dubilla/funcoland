@@ -72,6 +72,7 @@ export default function QueueCard({ queue }) {
         <div className="p-4 bg-gray-50">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Games in Queue</h3>
           <div className="space-y-2">
+            {/* eslint-disable-next-line no-unused-vars */}
             {games.map(({ id, game, progressPercent, queuePosition }) => (
               <div key={id} className="flex items-center p-2 rounded hover:bg-gray-100">
                 <div className="w-8 h-8 relative overflow-hidden rounded mr-3 flex-shrink-0">

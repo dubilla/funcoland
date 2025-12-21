@@ -72,8 +72,9 @@ export async function PATCH(request, { params }) {
     }
     
     // Update the game
+    // eslint-disable-next-line no-unused-vars
     const updatedUserGame = await updateGameProgress(id, progressPercent, status);
-    
+
     // Get the full user game with related data for the response
     const fullUserGame = await prisma.userGame.findUnique({
       where: { id },

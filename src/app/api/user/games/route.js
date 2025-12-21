@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+// eslint-disable-next-line no-unused-vars
 import { addGameToUserCollection, updateGameProgress } from '@/lib/services/gameService';
 import prisma from '@/lib/db';
 

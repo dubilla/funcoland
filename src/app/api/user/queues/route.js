@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { createGameQueue, getUserQueues } from '@/lib/services/gameService';
 
 // Get user's queues
+// eslint-disable-next-line no-unused-vars
 export async function GET(request) {
   // Check if user is authenticated
   const session = await getServerSession(authOptions);
