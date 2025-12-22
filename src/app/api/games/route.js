@@ -13,11 +13,11 @@ export async function POST(request) {
 
   try {
     const { igdbId } = await request.json();
-    
+
     if (!igdbId) {
       return NextResponse.json({ error: 'IGDB ID is required' }, { status: 400 });
     }
-    
+
     const game = await addGameFromIgdb(igdbId);
     return NextResponse.json({ game });
   } catch (error) {

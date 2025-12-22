@@ -50,8 +50,11 @@ async function getAccessToken() {
  */
 async function executeQuery(endpoint, query) {
   try {
+    console.log('[IGDB] Getting access token...');
     const token = await getAccessToken();
-    
+    console.log('[IGDB] Token obtained:', token ? 'yes' : 'no');
+
+    console.log('[IGDB] Fetching:', `${IGDB_ENDPOINT}/${endpoint}`);
     const response = await fetch(`${IGDB_ENDPOINT}/${endpoint}`, {
       method: 'POST',
       headers: {
@@ -62,13 +65,18 @@ async function executeQuery(endpoint, query) {
       body: query
     });
 
+    console.log('[IGDB] Response status:', response.status);
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[IGDB] Error response:', errorText);
       throw new Error(`IGDB API error: ${response.statusText}`);
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log('[IGDB] Response data:', Array.isArray(data) ? `Array(${data.length})` : typeof data);
+    return data;
   } catch (error) {
-    console.error(`Error querying IGDB ${endpoint}:`, error);
+    console.error(`[IGDB] Error querying IGDB ${endpoint}:`, error);
     throw error;
   }
 }
@@ -81,28 +89,32 @@ async function executeQuery(endpoint, query) {
  * @returns {Promise<Array>} - Search results
  */
 export async function searchGames(query, limit = 20, offset = 0) {
-  const igdbQuery = `
-    search "${query}";
-    fields name, cover, first_release_date, summary, involved_companies.company.name;
-    where category = 0 & version_parent = null;
-    limit ${limit};
-    offset ${offset};
-  `;
-  
+  console.log('[IGDB] searchGames called with:', { query, limit, offset });
+
+  // IGDB search syntax: search keyword cannot be combined with where clause
+  // Using search alone to get best results
+  const igdbQuery = `search "${query}";
+fields name, cover, first_release_date, summary;
+limit ${limit};`;
+
+  console.log('[IGDB] Executing query:', igdbQuery);
   const games = await executeQuery('games', igdbQuery);
-  
+  console.log('[IGDB] Games returned from API:', games.length);
+
   // If we have games with covers, fetch cover images
   if (games.length > 0) {
     const gameIds = games.filter(game => game.cover).map(game => game.cover);
-    
+    console.log('[IGDB] Games with covers:', gameIds.length);
+
     if (gameIds.length > 0) {
       const coverQuery = `
         fields url, game;
         where id = (${gameIds.join(',')});
       `;
-      
+
       const covers = await executeQuery('covers', coverQuery);
-      
+      console.log('[IGDB] Covers fetched:', covers.length);
+
       // Add cover URLs to the games
       for (const game of games) {
         if (game.cover) {
@@ -115,7 +127,8 @@ export async function searchGames(query, limit = 20, offset = 0) {
       }
     }
   }
-  
+
+  console.log('[IGDB] Returning', games.length, 'games');
   return games;
 }
 

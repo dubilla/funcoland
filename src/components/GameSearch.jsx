@@ -19,12 +19,16 @@ export default function GameSearch({ onGameSelect }) {
     
     try {
       const res = await fetch(`/api/games/search?query=${encodeURIComponent(query)}`);
-      
+
       if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Search failed:', res.status, errorText);
         throw new Error('Failed to search games');
       }
-      
+
       const data = await res.json();
+      console.log('Search results:', data);
+      console.log('Games found:', data.games?.length || 0);
       setResults(data.games || []);
     } catch (err) {
       console.error('Error searching games:', err);
@@ -43,13 +47,13 @@ export default function GameSearch({ onGameSelect }) {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ rawgId: game.apiId }),
+          body: JSON.stringify({ igdbId: game.apiId }),
         });
-        
+
         if (!res.ok) {
           throw new Error('Failed to add game');
         }
-        
+
         const data = await res.json();
         onGameSelect(data.game);
       } catch (err) {

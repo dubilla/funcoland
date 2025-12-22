@@ -9,6 +9,8 @@ import prisma from '../db';
  * @returns {Promise<Array>} - List of games from our database and external APIs
  */
 export async function searchGames(query) {
+  console.log('[gameService] searchGames called with query:', query);
+
   // First check if we have these games in our database
   const dbGames = await prisma.game.findMany({
     where: {
@@ -19,22 +21,30 @@ export async function searchGames(query) {
     },
     take: 10,
   });
-  
+
+  console.log('[gameService] Database results:', dbGames.length);
+
   // If we have enough results, just return them
   if (dbGames.length >= 10) {
+    console.log('[gameService] Returning DB results only (10+ found)');
     return dbGames;
   }
-  
+
   // Otherwise, search external API
   try {
+    console.log('[gameService] Calling IGDB API...');
     const igdbResults = await igdbApi.searchGames(query);
-    
+    console.log('[gameService] IGDB raw results:', igdbResults.length);
+
     // Map the results to our model
     const externalGames = igdbResults.map(igdbApi.mapIgdbGameToModel);
-    
-    return [...dbGames, ...externalGames].slice(0, 20); // Return at most 20 games
+    console.log('[gameService] Mapped external games:', externalGames.length);
+
+    const finalResults = [...dbGames, ...externalGames].slice(0, 20);
+    console.log('[gameService] Final results:', finalResults.length);
+    return finalResults; // Return at most 20 games
   } catch (error) {
-    console.error('Error searching IGDB:', error);
+    console.error('[gameService] Error searching IGDB:', error);
     return dbGames; // Return only DB results if external API fails
   }
 }
@@ -52,25 +62,25 @@ export async function addGameFromIgdb(igdbId) {
       apiSource: 'IGDB',
     },
   });
-  
+
   if (existingGame) {
     return existingGame;
   }
-  
+
   try {
     // Get data from IGDB API
     const igdbGame = await igdbApi.getGameDetails(igdbId);
     const gameData = igdbApi.mapIgdbGameToModel(igdbGame);
-    
+
     // Get HowLongToBeat data
     const hltbData = await hltbApi.getGameCompletionTimes(gameData.title);
-    
+
     // Combine the data
     const fullGameData = {
       ...gameData,
       ...hltbData,
     };
-    
+
     // Save to database
     return prisma.game.create({
       data: fullGameData,
