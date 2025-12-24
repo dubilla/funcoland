@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 export async function middleware(req) {
-  const token = await getToken({ 
-    req, 
-    secret: process.env.NEXTAUTH_SECRET 
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET
   });
 
   // If there's an issue with token decoding, log it for debugging
@@ -13,12 +13,12 @@ export async function middleware(req) {
   }
 
   // Allow authentication routes and public routes
-  const isAuthPage = req.nextUrl.pathname.startsWith('/signin') || 
+  const isAuthPage = req.nextUrl.pathname.startsWith('/signin') ||
                      req.nextUrl.pathname.startsWith('/auth') ||
                      req.nextUrl.pathname === '/clear-cookies';
-  
+
   // Public pages that don't require authentication
-  const isPublicPage = req.nextUrl.pathname === '/' || 
+  const isPublicPage = req.nextUrl.pathname === '/' ||
                        req.nextUrl.pathname.startsWith('/api/auth');
 
   // Redirect to login if accessing protected page without being logged in

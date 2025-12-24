@@ -10,18 +10,18 @@ export default function CreateQueue() {
   const [description, setDescription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!name.trim()) {
       setError('Queue name is required');
       return;
     }
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const res = await fetch('/api/user/queues', {
         method: 'POST',
@@ -33,12 +33,12 @@ export default function CreateQueue() {
           description,
         }),
       });
-      
+
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || 'Failed to create queue');
       }
-      
+
       // Redirect to queues page after successful creation
       router.push('/dashboard');
     } catch (err) {
@@ -48,7 +48,7 @@ export default function CreateQueue() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -57,7 +57,7 @@ export default function CreateQueue() {
           Back to Dashboard
         </Link>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-md p-6">
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -73,7 +73,7 @@ export default function CreateQueue() {
               placeholder="e.g., Currently Playing, JRPGs, Games to Finish in 2025"
             />
           </div>
-          
+
           <div className="mb-6">
             <label htmlFor="description" className="block text-gray-700 mb-2">
               Description (Optional)
@@ -87,9 +87,9 @@ export default function CreateQueue() {
               placeholder="Describe this queue (optional)"
             ></textarea>
           </div>
-          
+
           {error && <p className="text-red-600 mb-4">{error}</p>}
-          
+
           <div className="flex justify-end">
             <button
               type="submit"
@@ -101,7 +101,7 @@ export default function CreateQueue() {
           </div>
         </form>
       </div>
-      
+
       <div className="mt-8 bg-blue-50 rounded-lg p-4">
         <h2 className="text-lg font-semibold mb-2">Tips for Creating Queues</h2>
         <ul className="list-disc pl-5 space-y-1 text-gray-700">

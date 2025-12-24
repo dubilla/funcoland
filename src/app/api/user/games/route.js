@@ -15,14 +15,14 @@ export async function POST(request) {
 
   try {
     const { gameId, queueId, status } = await request.json();
-    
+
     if (!gameId) {
       return NextResponse.json({ error: 'Game ID is required' }, { status: 400 });
     }
-    
+
     const userId = session.user.id;
     const userGame = await addGameToUserCollection(userId, gameId, { queueId, status });
-    
+
     return NextResponse.json({ userGame });
   } catch (error) {
     console.error('Error adding game to collection:', error);
@@ -42,12 +42,12 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const userId = session.user.id;
-    
+
     const where = { userId };
     if (status) {
       where.status = status;
     }
-    
+
     const userGames = await prisma.userGame.findMany({
       where,
       include: {
@@ -63,7 +63,7 @@ export async function GET(request) {
         updatedAt: 'desc',
       },
     });
-    
+
     return NextResponse.json({ userGames });
   } catch (error) {
     console.error('Error getting user games:', error);

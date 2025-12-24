@@ -34,7 +34,7 @@ async function getAccessToken() {
     authToken = data.access_token;
     // Set expiry 10 seconds before actual expiry to be safe
     tokenExpiry = Date.now() + (data.expires_in - 10) * 1000;
-    
+
     return authToken;
   } catch (error) {
     console.error('Error getting IGDB access token:', error);
@@ -143,30 +143,30 @@ export async function getGameDetails(id) {
     platforms.name, age_ratings.rating, total_rating, total_rating_count;
     where id = ${id};
   `;
-  
+
   const games = await executeQuery('games', igdbQuery);
-  
+
   if (games.length === 0) {
     throw new Error(`Game with ID ${id} not found`);
   }
-  
+
   const game = games[0];
-  
+
   // Fetch cover image if available
   if (game.cover) {
     const coverQuery = `
       fields url;
       where id = ${game.cover};
     `;
-    
+
     const covers = await executeQuery('covers', coverQuery);
-    
+
     if (covers.length > 0) {
       // Convert to https and get the big cover image
       game.cover_url = covers[0].url.replace('//images.igdb.com', 'https://images.igdb.com').replace('thumb', 'cover_big');
     }
   }
-  
+
   return game;
 }
 
@@ -179,7 +179,7 @@ export function mapIgdbGameToModel(igdbGame) {
   // Extract developer and publisher from involved companies
   let developer = null;
   let publisher = null;
-  
+
   if (igdbGame.involved_companies) {
     for (const company of igdbGame.involved_companies) {
       if (company.developer) {
@@ -190,7 +190,7 @@ export function mapIgdbGameToModel(igdbGame) {
       }
     }
   }
-  
+
   return {
     title: igdbGame.name,
     apiId: String(igdbGame.id),

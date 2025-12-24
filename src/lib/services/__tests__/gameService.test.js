@@ -1,4 +1,3 @@
-/* eslint-env jest */
 import {
   STATE_TRANSITIONS,
   isValidTransition,

@@ -7,7 +7,7 @@ import Image from 'next/image';
 export default function QueueCard({ queue }) {
   const { id, name, games, stats } = queue;
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   // Format time in hours
   const formatHours = (minutes) => {
     if (!minutes) return '0h';
@@ -29,7 +29,7 @@ export default function QueueCard({ queue }) {
             {isExpanded ? 'Hide' : 'Show'} Games
           </button>
         </div>
-        
+
         <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-gray-600">Games</p>
@@ -48,15 +48,15 @@ export default function QueueCard({ queue }) {
             <p className="font-semibold text-lg">{formatHours(stats.remainingTime)}</p>
           </div>
         </div>
-        
+
         {/* Progress bar */}
         {stats.totalMainTime > 0 && (
           <div className="mt-3">
             <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div 
-                className="bg-blue-600 h-2.5 rounded-full" 
-                style={{ 
-                  width: `${Math.min(100, (stats.completedTime / stats.totalMainTime) * 100)}%` 
+              <div
+                className="bg-blue-600 h-2.5 rounded-full"
+                style={{
+                  width: `${Math.min(100, (stats.completedTime / stats.totalMainTime) * 100)}%`
                 }}
               ></div>
             </div>
@@ -66,7 +66,7 @@ export default function QueueCard({ queue }) {
           </div>
         )}
       </div>
-      
+
       {/* Game list (expandable) */}
       {isExpanded && games.length > 0 && (
         <div className="p-4 bg-gray-50">
@@ -101,7 +101,7 @@ export default function QueueCard({ queue }) {
           </div>
         </div>
       )}
-      
+
       {isExpanded && games.length === 0 && (
         <div className="p-4 text-center text-gray-500">
           No games in this queue yet. Add some games to get started!

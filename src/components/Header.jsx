@@ -8,12 +8,12 @@ import Image from 'next/image'
 export default function Header() {
   const { data: session, status } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
-  
+
   // Debug logging for authentication
   useEffect(() => {
     console.log('Session status:', status)
     console.log('Session data:', session)
-    
+
     if (status === 'authenticated') {
       console.log('User is authenticated:', session.user.name || session.user.email)
     } else if (status === 'loading') {
@@ -22,9 +22,9 @@ export default function Header() {
       console.log('No active session')
     }
   }, [session, status])
-  
+
   const toggleMenu = () => setMenuOpen(prev => !prev)
-  
+
   return (
     <header className="bg-white shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -34,7 +34,7 @@ export default function Header() {
               <span className="text-xl font-bold text-blue-600">FuncoLand</span>
             </Link>
           </div>
-          
+
           {/* Desktop navigation */}
           <nav className="hidden md:flex space-x-8">
             {session && (
@@ -54,14 +54,14 @@ export default function Header() {
               </>
             )}
           </nav>
-          
+
           {/* User menu */}
           <div className="hidden md:flex items-center">
             {status === 'loading' ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>
             ) : session ? (
               <div className="relative">
-                <button 
+                <button
                   onClick={toggleMenu}
                   className="flex items-center space-x-2 focus:outline-none"
                 >
@@ -83,11 +83,11 @@ export default function Header() {
                     {session?.user?.name || session?.user?.email || 'User'}
                   </span>
                 </button>
-                
+
                 {menuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                    <Link 
-                      href="/profile" 
+                    <Link
+                      href="/profile"
                       className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                       onClick={() => setMenuOpen(false)}
                     >
@@ -106,18 +106,18 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <Link 
-                href="/signin" 
+              <Link
+                href="/signin"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
               >
                 Sign in
               </Link>
             )}
           </div>
-          
+
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
-            <button 
+            <button
               onClick={toggleMenu}
               className="text-gray-500 hover:text-gray-700 focus:outline-none"
             >
@@ -132,43 +132,43 @@ export default function Header() {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden">
           <div className="bg-white pt-2 pb-3 space-y-1">
             {session ? (
               <>
-                <Link 
-                  href="/dashboard" 
+                <Link
+                  href="/dashboard"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   onClick={() => setMenuOpen(false)}
                 >
                   Dashboard
                 </Link>
-                <Link 
-                  href="/games" 
+                <Link
+                  href="/games"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   onClick={() => setMenuOpen(false)}
                 >
                   My Games
                 </Link>
-                <Link 
-                  href="/queues" 
+                <Link
+                  href="/queues"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   onClick={() => setMenuOpen(false)}
                 >
                   Queues
                 </Link>
-                <Link 
-                  href="/games/add" 
+                <Link
+                  href="/games/add"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   onClick={() => setMenuOpen(false)}
                 >
                   Add Games
                 </Link>
-                <Link 
-                  href="/profile" 
+                <Link
+                  href="/profile"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                   onClick={() => setMenuOpen(false)}
                 >
@@ -185,8 +185,8 @@ export default function Header() {
                 </button>
               </>
             ) : (
-              <Link 
-                href="/signin" 
+              <Link
+                href="/signin"
                 className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={() => setMenuOpen(false)}
               >

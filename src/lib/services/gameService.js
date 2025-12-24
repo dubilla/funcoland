@@ -121,7 +121,7 @@ export async function addGameFromIgdb(igdbId) {
  */
 export async function addGameToUserCollection(userId, gameId, options = {}) {
   const { queueId, status = 'BACKLOG' } = options;
-  
+
   // Check if user already has this game
   const existingUserGame = await prisma.userGame.findUnique({
     where: {
@@ -131,7 +131,7 @@ export async function addGameToUserCollection(userId, gameId, options = {}) {
       },
     },
   });
-  
+
   if (existingUserGame) {
     // Update existing record
     return prisma.userGame.update({
@@ -144,7 +144,7 @@ export async function addGameToUserCollection(userId, gameId, options = {}) {
       },
     });
   }
-  
+
   // Calculate queue position if adding to a queue
   let queuePosition = null;
   if (queueId) {
@@ -153,12 +153,12 @@ export async function addGameToUserCollection(userId, gameId, options = {}) {
       orderBy: { queuePosition: 'desc' },
       take: 1,
     });
-    
-    queuePosition = gamesInQueue.length > 0 
-      ? (gamesInQueue[0].queuePosition || 0) + 1 
+
+    queuePosition = gamesInQueue.length > 0
+      ? (gamesInQueue[0].queuePosition || 0) + 1
       : 0;
   }
-  
+
   // Create new user game
   return prisma.userGame.create({
     data: {
@@ -180,14 +180,14 @@ export async function addGameToUserCollection(userId, gameId, options = {}) {
  */
 export async function updateGameProgress(userGameId, progressPercent, status) {
   let data = {};
-  
+
   if (progressPercent !== undefined) {
     data.progressPercent = Math.max(0, Math.min(100, progressPercent));
   }
-  
+
   if (status) {
     data.status = status;
-    
+
     // Set started/completed dates based on status
     if (status === 'CURRENTLY_PLAYING' && !data.startedAt) {
       data.startedAt = new Date();
@@ -195,7 +195,7 @@ export async function updateGameProgress(userGameId, progressPercent, status) {
       data.completedAt = new Date();
     }
   }
-  
+
   return prisma.userGame.update({
     where: { id: userGameId },
     data,
@@ -283,16 +283,16 @@ export async function createGameQueue(userId, name, description = '') {
       },
     },
   });
-  
+
   if (existingQueue) {
     throw new Error(`Queue with name "${name}" already exists`);
   }
-  
+
   // Check if user has any queues yet
   const queueCount = await prisma.gameQueue.count({
     where: { userId },
   });
-  
+
   return prisma.gameQueue.create({
     data: {
       userId,
@@ -317,6 +317,6 @@ export async function reorderQueueGames(queueId, gameOrders) {
       data: { queuePosition: position },
     });
   }
-  
+
   return true;
 }

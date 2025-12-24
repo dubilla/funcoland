@@ -15,21 +15,21 @@ export async function PATCH(request, { params }) {
   try {
     const { id } = params;
     const { name, description, gameOrders } = await request.json();
-    
+
     // Verify this queue belongs to the current user
     const queue = await prisma.gameQueue.findUnique({
       where: { id },
       select: { userId: true },
     });
-    
+
     if (!queue) {
       return NextResponse.json({ error: 'Queue not found' }, { status: 404 });
     }
-    
+
     if (queue.userId !== session.user.id) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
-    
+
     // Update queue info if provided
     if (name || description !== undefined) {
       await prisma.gameQueue.update({
@@ -40,12 +40,12 @@ export async function PATCH(request, { params }) {
         },
       });
     }
-    
+
     // Reorder games if provided
     if (gameOrders && gameOrders.length > 0) {
       await reorderQueueGames(id, gameOrders);
     }
-    
+
     // Get updated queue
     const updatedQueue = await prisma.gameQueue.findUnique({
       where: { id },
@@ -60,7 +60,7 @@ export async function PATCH(request, { params }) {
         },
       },
     });
-    
+
     return NextResponse.json({ queue: updatedQueue });
   } catch (error) {
     console.error('Error updating queue:', error);
@@ -78,26 +78,26 @@ export async function DELETE(request, { params }) {
 
   try {
     const { id } = params;
-    
+
     // Verify this queue belongs to the current user
     const queue = await prisma.gameQueue.findUnique({
       where: { id },
       select: { userId: true, isDefault: true },
     });
-    
+
     if (!queue) {
       return NextResponse.json({ error: 'Queue not found' }, { status: 404 });
     }
-    
+
     if (queue.userId !== session.user.id) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
     }
-    
+
     // Don't allow deletion of default queue
     if (queue.isDefault) {
       return NextResponse.json({ error: 'Cannot delete default queue' }, { status: 400 });
     }
-    
+
     // Remove games from this queue (but don't delete the user games)
     await prisma.userGame.updateMany({
       where: { queueId: id },
@@ -106,12 +106,12 @@ export async function DELETE(request, { params }) {
         queuePosition: null,
       },
     });
-    
+
     // Delete the queue
     await prisma.gameQueue.delete({
       where: { id },
     });
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting queue:', error);

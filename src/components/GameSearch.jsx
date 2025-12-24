@@ -11,12 +11,12 @@ export default function GameSearch({ onGameSelect }) {
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    
+
     if (!query.trim()) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const res = await fetch(`/api/games/search?query=${encodeURIComponent(query)}`);
 

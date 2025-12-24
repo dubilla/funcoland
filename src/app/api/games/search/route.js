@@ -13,11 +13,11 @@ export async function GET(request) {
   // Get query parameter
   const { searchParams } = new URL(request.url);
   const query = searchParams.get('query');
-  
+
   if (!query) {
     return NextResponse.json({ error: 'Query parameter is required' }, { status: 400 });
   }
-  
+
   try {
     const games = await searchGames(query);
     return NextResponse.json({ games });

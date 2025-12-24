@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 export default function UpdateGame({ params }) {
   const { id } = params || {};
-  
+
   const [userGame, setUserGame] = useState(null);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
@@ -14,16 +14,16 @@ export default function UpdateGame({ params }) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  
+
   useEffect(() => {
     async function fetchGame() {
       try {
         const res = await fetch(`/api/user/games/${id}`);
-        
+
         if (!res.ok) {
           throw new Error('Failed to fetch game');
         }
-        
+
         const data = await res.json();
         setUserGame(data.userGame);
         setProgress(data.userGame.progressPercent);
@@ -35,19 +35,19 @@ export default function UpdateGame({ params }) {
         setIsLoading(false);
       }
     }
-    
+
     if (id) {
       fetchGame();
     }
   }, [id]);
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     setIsSaving(true);
     setError(null);
     setSuccessMessage('');
-    
+
     try {
       const res = await fetch(`/api/user/games/${id}`, {
         method: 'PATCH',
@@ -59,15 +59,15 @@ export default function UpdateGame({ params }) {
           status,
         }),
       });
-      
+
       if (!res.ok) {
         throw new Error('Failed to update game');
       }
-      
+
       const data = await res.json();
       setUserGame(data.userGame);
       setSuccessMessage('Game progress updated successfully!');
-      
+
       // If progress is 100% and status isn't completed, ask if they want to mark as completed
       if (progress === 100 && status !== 'COMPLETED') {
         if (window.confirm('You reached 100%! Would you like to mark this game as completed?')) {
@@ -84,7 +84,7 @@ export default function UpdateGame({ params }) {
           });
         }
       }
-      
+
     } catch (err) {
       console.error('Error updating game:', err);
       setError('Failed to update game. Please try again.');
@@ -92,12 +92,12 @@ export default function UpdateGame({ params }) {
       setIsSaving(false);
     }
   };
-  
+
   const handleStartPlaying = async () => {
     if (status !== 'CURRENTLY_PLAYING') {
       setStatus('CURRENTLY_PLAYING');
       setProgress(1); // Start with 1% progress
-      
+
       try {
         await fetch(`/api/user/games/${id}`, {
           method: 'PATCH',
@@ -109,7 +109,7 @@ export default function UpdateGame({ params }) {
             status: 'CURRENTLY_PLAYING',
           }),
         });
-        
+
         setSuccessMessage('Game marked as currently playing!');
       } catch (err) {
         console.error('Error starting game:', err);
@@ -117,30 +117,30 @@ export default function UpdateGame({ params }) {
       }
     }
   };
-  
+
   // Calculate time remaining based on progress and HLTB time
   const calculateTimeRemaining = () => {
     if (!userGame || !userGame.game.hltbMainTime) return null;
-    
+
     const totalTime = userGame.game.hltbMainTime; // in minutes
     const completed = progress / 100;
     const remainingTime = totalTime * (1 - completed);
-    
+
     return remainingTime; // in minutes
   };
-  
+
   // Format time in hours and minutes
   const formatTime = (minutes) => {
     if (!minutes) return 'Unknown';
-    
+
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
-    
+
     if (hours === 0) return `${mins} minutes`;
     if (mins === 0) return `${hours} hours`;
     return `${hours} hours, ${mins} minutes`;
   };
-  
+
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -156,7 +156,7 @@ export default function UpdateGame({ params }) {
       </div>
     );
   }
-  
+
   if (error && !userGame) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -169,7 +169,7 @@ export default function UpdateGame({ params }) {
       </div>
     );
   }
-  
+
   if (!userGame) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -182,10 +182,10 @@ export default function UpdateGame({ params }) {
       </div>
     );
   }
-  
+
   const { game } = userGame;
   const timeRemaining = calculateTimeRemaining();
-  
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
@@ -194,7 +194,7 @@ export default function UpdateGame({ params }) {
           Back to Dashboard
         </Link>
       </div>
-      
+
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="md:flex">
           <div className="md:w-1/3 relative">
@@ -213,7 +213,7 @@ export default function UpdateGame({ params }) {
               )}
             </div>
           </div>
-          
+
           <div className="p-6 md:w-2/3">
             <div className="flex flex-col h-full">
               <div className="mb-4">
@@ -232,7 +232,7 @@ export default function UpdateGame({ params }) {
                      status === 'ABANDONED' ? 'Abandoned' : 'Wishlist'}
                   </span>
                 </div>
-                
+
                 {status === 'BACKLOG' ? (
                   <div className="py-2 mb-4">
                     <button
@@ -272,7 +272,7 @@ export default function UpdateGame({ params }) {
                         <span className="text-right">100%</span>
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Status
@@ -289,10 +289,10 @@ export default function UpdateGame({ params }) {
                         <option value="WISHLIST">Wishlist</option>
                       </select>
                     </div>
-                    
+
                     {error && <p className="text-red-600 text-sm">{error}</p>}
                     {successMessage && <p className="text-green-600 text-sm">{successMessage}</p>}
-                    
+
                     <div className="flex justify-end">
                       <button
                         type="submit"
@@ -305,7 +305,7 @@ export default function UpdateGame({ params }) {
                   </form>
                 )}
               </div>
-              
+
               <div className="mt-auto">
                 <div className="border-t pt-4">
                   <h3 className="text-sm font-medium mb-2">Game Info</h3>
