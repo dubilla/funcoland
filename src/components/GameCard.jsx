@@ -3,41 +3,69 @@
 import { useState } from 'react';
 import Image from 'next/image';
 
+const STATE_TRANSITIONS = {
+  WISHLIST: ['BACKLOG', 'CURRENTLY_PLAYING'],
+  BACKLOG: ['WISHLIST', 'CURRENTLY_PLAYING'],
+  CURRENTLY_PLAYING: ['BACKLOG', 'COMPLETED', 'ABANDONED'],
+  COMPLETED: ['CURRENTLY_PLAYING'],
+  ABANDONED: ['BACKLOG', 'CURRENTLY_PLAYING'],
+};
+
+const statusConfig = {
+  BACKLOG: {
+    label: 'Backlog',
+    emoji: '',
+    colors: 'bg-gray-200 text-gray-800',
+    buttonColors: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+  },
+  CURRENTLY_PLAYING: {
+    label: 'Playing',
+    emoji: '',
+    colors: 'bg-green-200 text-green-800',
+    buttonColors: 'bg-green-100 hover:bg-green-200 text-green-700',
+  },
+  COMPLETED: {
+    label: 'Completed',
+    emoji: '',
+    colors: 'bg-blue-200 text-blue-800',
+    buttonColors: 'bg-blue-100 hover:bg-blue-200 text-blue-700',
+    isTerminal: true,
+  },
+  ABANDONED: {
+    label: 'Abandoned',
+    emoji: '',
+    colors: 'bg-red-200 text-red-800',
+    buttonColors: 'bg-red-100 hover:bg-red-200 text-red-700',
+    isTerminal: true,
+  },
+  WISHLIST: {
+    label: 'Wishlist',
+    emoji: '',
+    colors: 'bg-purple-200 text-purple-800',
+    buttonColors: 'bg-purple-100 hover:bg-purple-200 text-purple-700',
+  },
+};
+
 export default function GameCard({ userGame, onUpdate, onRemove }) {
   const { id, game, progressPercent, status, queue } = userGame;
   const [progress, setProgress] = useState(progressPercent);
-  const [gameStatus, setGameStatus] = useState(status);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [pendingTransition, setPendingTransition] = useState(null);
+  const [error, setError] = useState(null);
 
-  const statusColors = {
-    BACKLOG: 'bg-gray-200 text-gray-800',
-    CURRENTLY_PLAYING: 'bg-green-200 text-green-800',
-    COMPLETED: 'bg-blue-200 text-blue-800',
-    ABANDONED: 'bg-red-200 text-red-800',
-    WISHLIST: 'bg-purple-200 text-purple-800',
-  };
-
-  const statusLabels = {
-    BACKLOG: 'Backlog',
-    CURRENTLY_PLAYING: 'Playing',
-    COMPLETED: 'Completed',
-    ABANDONED: 'Abandoned',
-    WISHLIST: 'Wishlist',
-  };
+  const validTransitions = STATE_TRANSITIONS[status] || [];
 
   const handleProgressChange = (e) => {
     setProgress(parseInt(e.target.value, 10));
   };
 
-  const handleStatusChange = (e) => {
-    setGameStatus(e.target.value);
-  };
-
-  const handleSubmit = async (e) => {
+  const handleProgressSubmit = async (e) => {
     e.preventDefault();
     setIsUpdating(true);
-    
+    setError(null);
+
     try {
       const res = await fetch(`/api/user/games/${id}`, {
         method: 'PATCH',
@@ -46,46 +74,105 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
         },
         body: JSON.stringify({
           progressPercent: progress,
-          status: gameStatus,
         }),
       });
-      
+
       if (!res.ok) {
-        throw new Error('Failed to update game');
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update progress');
       }
-      
+
       const data = await res.json();
-      setIsOpen(false);
-      
-      // Notify parent component to update UI
+      setIsProgressModalOpen(false);
       onUpdate(data.userGame);
     } catch (err) {
-      console.error('Error updating game:', err);
+      console.error('Error updating progress:', err);
+      setError(err.message);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  const handleRemove = async () => {
-    if (!window.confirm('Are you sure you want to remove this game from your collection?')) {
+  const handleStateTransition = async (newStatus) => {
+    const config = statusConfig[newStatus];
+
+    if (config?.isTerminal) {
+      setPendingTransition(newStatus);
+      setIsConfirmModalOpen(true);
       return;
     }
-    
+
+    await executeTransition(newStatus);
+  };
+
+  const executeTransition = async (newStatus) => {
+    setIsUpdating(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`/api/user/games/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to update status');
+      }
+
+      const data = await res.json();
+      setIsConfirmModalOpen(false);
+      setPendingTransition(null);
+      onUpdate(data.userGame);
+    } catch (err) {
+      console.error('Error updating status:', err);
+      setError(err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleConfirmTransition = () => {
+    if (pendingTransition) {
+      executeTransition(pendingTransition);
+    }
+  };
+
+  const handleCancelConfirm = () => {
+    setIsConfirmModalOpen(false);
+    setPendingTransition(null);
+  };
+
+  const handleRemove = async () => {
+    if (
+      !window.confirm(
+        'Are you sure you want to remove this game from your collection?'
+      )
+    ) {
+      return;
+    }
+
     try {
       const res = await fetch(`/api/user/games/${id}`, {
         method: 'DELETE',
       });
-      
+
       if (!res.ok) {
         throw new Error('Failed to remove game');
       }
-      
-      // Notify parent component to update UI
+
       onRemove(id);
     } catch (err) {
       console.error('Error removing game:', err);
     }
   };
+
+  const currentStatusConfig = statusConfig[status];
 
   return (
     <div className="border rounded-lg overflow-hidden shadow bg-white">
@@ -103,23 +190,26 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
           </div>
         )}
       </div>
-      
+
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-medium truncate max-w-[70%]">{game.title}</h3>
-          <span className={`text-xs px-2 py-0.5 rounded ${statusColors[status]}`}>
-            {statusLabels[status]}
+          <h3 className="font-medium truncate max-w-[60%]">{game.title}</h3>
+          <span
+            className={`text-xs px-2 py-0.5 rounded ${currentStatusConfig.colors}`}
+          >
+            {currentStatusConfig.emoji && `${currentStatusConfig.emoji} `}
+            {currentStatusConfig.label}
           </span>
         </div>
-        
+
         {queue && (
           <p className="text-sm text-gray-600 mb-2">Queue: {queue.name}</p>
         )}
-        
-        <div className="mb-2">
+
+        <div className="mb-3">
           <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div 
-              className="bg-blue-600 h-2.5 rounded-full" 
+            <div
+              className="bg-blue-600 h-2.5 rounded-full"
               style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
@@ -130,13 +220,33 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
             )}
           </div>
         </div>
-        
-        <div className="flex gap-2 mt-3">
+
+        {error && <p className="text-red-600 text-xs mb-2">{error}</p>}
+
+        {/* State transition buttons */}
+        <div className="flex flex-wrap gap-1 mb-3">
+          {validTransitions.map((targetStatus) => {
+            const targetConfig = statusConfig[targetStatus];
+            return (
+              <button
+                key={targetStatus}
+                onClick={() => handleStateTransition(targetStatus)}
+                disabled={isUpdating}
+                className={`text-xs px-2 py-1 rounded ${targetConfig.buttonColors} disabled:opacity-50`}
+              >
+                {targetConfig.emoji && `${targetConfig.emoji} `}
+                {targetConfig.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-2">
           <button
-            onClick={() => setIsOpen(true)}
+            onClick={() => setIsProgressModalOpen(true)}
             className="flex-1 px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
           >
-            Update
+            Update Progress
           </button>
           <button
             onClick={handleRemove}
@@ -146,16 +256,20 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
           </button>
         </div>
       </div>
-      
-      {/* Update Modal */}
-      {isOpen && (
+
+      {/* Progress Update Modal */}
+      {isProgressModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
-            <h2 className="text-xl font-semibold mb-4">Update {game.title}</h2>
-            
-            <form onSubmit={handleSubmit}>
+            <h2 className="text-xl font-semibold mb-4">
+              Update Progress: {game.title}
+            </h2>
+
+            <form onSubmit={handleProgressSubmit}>
               <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Progress ({progress}%)</label>
+                <label className="block text-gray-700 mb-2">
+                  Progress ({progress}%)
+                </label>
                 <input
                   type="range"
                   min="0"
@@ -165,26 +279,13 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
                   className="w-full"
                 />
               </div>
-              
-              <div className="mb-4">
-                <label className="block text-gray-700 mb-2">Status</label>
-                <select
-                  value={gameStatus}
-                  onChange={handleStatusChange}
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="BACKLOG">Backlog</option>
-                  <option value="CURRENTLY_PLAYING">Currently Playing</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="ABANDONED">Abandoned</option>
-                  <option value="WISHLIST">Wishlist</option>
-                </select>
-              </div>
-              
+
+              {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+
               <div className="flex justify-end gap-2 mt-6">
                 <button
                   type="button"
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => setIsProgressModalOpen(false)}
                   className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
                 >
                   Cancel
@@ -198,6 +299,56 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal for Terminal States */}
+      {isConfirmModalOpen && pendingTransition && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6">
+            <h2 className="text-xl font-semibold mb-4">Confirm Status Change</h2>
+
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to mark <strong>{game.title}</strong> as{' '}
+              <strong>{statusConfig[pendingTransition].label}</strong>?
+              {pendingTransition === 'COMPLETED' && (
+                <span className="block mt-2 text-sm">
+                  This will record your completion date.
+                </span>
+              )}
+              {pendingTransition === 'ABANDONED' && (
+                <span className="block mt-2 text-sm">
+                  You can always return to this game later.
+                </span>
+              )}
+            </p>
+
+            {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
+
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCancelConfirm}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmTransition}
+                disabled={isUpdating}
+                className={`px-4 py-2 text-white rounded disabled:opacity-50 ${
+                  pendingTransition === 'COMPLETED'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {isUpdating
+                  ? 'Saving...'
+                  : `Mark as ${statusConfig[pendingTransition].label}`}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -3,6 +3,27 @@ import * as igdbApi from '../api/igdb';
 import * as hltbApi from '../api/hltb';
 import prisma from '../db';
 
+// State machine: defines valid transitions from each state
+export const STATE_TRANSITIONS = {
+  WISHLIST: ['BACKLOG', 'CURRENTLY_PLAYING'],
+  BACKLOG: ['WISHLIST', 'CURRENTLY_PLAYING'],
+  CURRENTLY_PLAYING: ['BACKLOG', 'COMPLETED', 'ABANDONED'],
+  COMPLETED: ['CURRENTLY_PLAYING'],
+  ABANDONED: ['BACKLOG', 'CURRENTLY_PLAYING'],
+};
+
+export function isValidTransition(fromStatus, toStatus) {
+  if (fromStatus === toStatus) {
+    return false;
+  }
+  const allowedTransitions = STATE_TRANSITIONS[fromStatus];
+  return allowedTransitions ? allowedTransitions.includes(toStatus) : false;
+}
+
+export function getValidTransitions(fromStatus) {
+  return STATE_TRANSITIONS[fromStatus] || [];
+}
+
 /**
  * Search for games across different sources
  * @param {string} query - Search query
@@ -178,6 +199,49 @@ export async function updateGameProgress(userGameId, progressPercent, status) {
   return prisma.userGame.update({
     where: { id: userGameId },
     data,
+  });
+}
+
+/**
+ * Transition a user's game to a new state with validation
+ * @param {string} userGameId - UserGame ID
+ * @param {string} newStatus - Target status
+ * @returns {Promise<Object>} - The updated user game or error
+ */
+export async function transitionUserGameState(userGameId, newStatus) {
+  const userGame = await prisma.userGame.findUnique({
+    where: { id: userGameId },
+    select: { status: true, startedAt: true, completedAt: true },
+  });
+
+  if (!userGame) {
+    throw new Error('Game not found');
+  }
+
+  const currentStatus = userGame.status;
+
+  if (!isValidTransition(currentStatus, newStatus)) {
+    const allowed = getValidTransitions(currentStatus);
+    throw new Error(
+      `Invalid transition from ${currentStatus} to ${newStatus}. Allowed: ${allowed.join(', ')}`
+    );
+  }
+
+  const data = { status: newStatus };
+
+  if (newStatus === 'CURRENTLY_PLAYING' && !userGame.startedAt) {
+    data.startedAt = new Date();
+  } else if (newStatus === 'COMPLETED' && !userGame.completedAt) {
+    data.completedAt = new Date();
+  }
+
+  return prisma.userGame.update({
+    where: { id: userGameId },
+    data,
+    include: {
+      game: true,
+      queue: true,
+    },
   });
 }
 
