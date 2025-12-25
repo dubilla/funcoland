@@ -240,7 +240,7 @@ export default async function Dashboard() {
                     </div>
 
                     <Link
-                      href={`/games/${userGame.id}/update`}
+                      href={`/games/${userGame.id}/edit`}
                       className="block w-full text-center bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold px-4 py-3 rounded-lg transition-all hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
                     >
                       Update Progress
@@ -295,7 +295,7 @@ export default async function Dashboard() {
 
                     <div className="flex gap-2">
                       <Link
-                        href={`/games/${userGame.id}/update`}
+                        href={`/games/${userGame.id}/edit`}
                         className="flex-1 text-center bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold px-4 py-3 rounded-lg transition-all hover:shadow-[0_0_20px_rgba(34,211,238,0.3)]"
                       >
                         Start
