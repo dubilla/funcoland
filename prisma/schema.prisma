@@ -74,10 +74,22 @@ model UserGame {
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   game            Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
   queue           GameQueue?  @relation(fields: [queueId], references: [id])
+  tags            UserGameTag[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
   @@unique([userId, gameId])
+}
+
+model UserGameTag {
+  id          String   @id @default(cuid())
+  userGameId  String
+  tag         String
+  userGame    UserGame @relation(fields: [userGameId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([userGameId, tag])
+  @@index([tag])
 }
 
 model GameQueue {
@@ -86,6 +98,7 @@ model GameQueue {
   userId          String
   description     String?
   isDefault       Boolean     @default(false)
+  filterTags      String[]    @default([])
   games           UserGame[]
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt       DateTime    @default(now())
