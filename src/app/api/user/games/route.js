@@ -58,6 +58,11 @@ export async function GET(request) {
             name: true,
           },
         },
+        tags: {
+          select: {
+            tag: true,
+          },
+        },
       },
       orderBy: {
         updatedAt: 'desc',
