@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -8,8 +8,47 @@ export default function CreateQueue() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [filterTags, setFilterTags] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchTags() {
+      try {
+        const res = await fetch('/api/user/tags');
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tags:', err);
+      }
+    }
+    fetchTags();
+  }, []);
+
+  const handleAddFilterTag = (tag) => {
+    const normalizedTag = tag.toLowerCase().trim();
+    if (normalizedTag && !filterTags.includes(normalizedTag)) {
+      setFilterTags(prev => [...prev, normalizedTag].sort());
+    }
+    setTagInput('');
+  };
+
+  const handleRemoveFilterTag = (tag) => {
+    setFilterTags(prev => prev.filter(t => t !== tag));
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        handleAddFilterTag(tagInput);
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +70,7 @@ export default function CreateQueue() {
         body: JSON.stringify({
           name,
           description,
+          filterTags: filterTags.length > 0 ? filterTags : undefined,
         }),
       });
 
@@ -86,6 +126,78 @@ export default function CreateQueue() {
               rows="3"
               placeholder="Describe this queue (optional)"
             ></textarea>
+          </div>
+
+          <div className="mb-6">
+            <label htmlFor="filterTags" className="block text-gray-700 mb-2">
+              Filter by Tags (Optional)
+            </label>
+            <p className="text-sm text-gray-500 mb-2">
+              Games with ALL selected tags will be automatically added to this queue.
+            </p>
+
+            {filterTags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {filterTags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFilterTag(tag)}
+                      className="hover:text-indigo-600 font-bold ml-1"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="relative">
+              <input
+                type="text"
+                id="filterTags"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                className="w-full p-2 border rounded"
+                placeholder="Type a tag and press Enter..."
+                list="tag-suggestions"
+              />
+              {availableTags.length > 0 && (
+                <datalist id="tag-suggestions">
+                  {availableTags
+                    .filter(tag => !filterTags.includes(tag))
+                    .map(tag => (
+                      <option key={tag} value={tag} />
+                    ))}
+                </datalist>
+              )}
+            </div>
+
+            {availableTags.length > 0 && (
+              <div className="mt-2">
+                <span className="text-sm text-gray-500">Your tags: </span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {availableTags
+                    .filter(tag => !filterTags.includes(tag))
+                    .slice(0, 10)
+                    .map(tag => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleAddFilterTag(tag)}
+                        className="text-xs px-2 py-1 bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-800 rounded"
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-red-600 mb-4">{error}</p>}

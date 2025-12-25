@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createGameQueue, getUserQueues } from '@/lib/services/gameService';
+import { createGameQueue, createGameQueueWithFilters, getUserQueues } from '@/lib/services/gameService';
 
 // Get user's queues
 // eslint-disable-next-line no-unused-vars
@@ -63,14 +63,18 @@ export async function POST(request) {
   }
 
   try {
-    const { name, description } = await request.json();
+    const { name, description, filterTags } = await request.json();
 
     if (!name) {
       return NextResponse.json({ error: 'Queue name is required' }, { status: 400 });
     }
 
     const userId = session.user.id;
-    const queue = await createGameQueue(userId, name, description);
+
+    // Use the filter-aware function if tags are provided
+    const queue = filterTags && filterTags.length > 0
+      ? await createGameQueueWithFilters(userId, name, description, filterTags)
+      : await createGameQueue(userId, name, description);
 
     return NextResponse.json({ queue });
   } catch (error) {
