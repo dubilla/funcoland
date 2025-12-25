@@ -10,6 +10,9 @@ export default function UpdateGame({ params }) {
   const [userGame, setUserGame] = useState(null);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('');
+  const [tags, setTags] = useState([]);
+  const [availableTags, setAvailableTags] = useState([]);
+  const [tagInput, setTagInput] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -28,6 +31,10 @@ export default function UpdateGame({ params }) {
         setUserGame(data.userGame);
         setProgress(data.userGame.progressPercent);
         setStatus(data.userGame.status);
+        // Extract tag strings from tag objects
+        if (data.userGame.tags) {
+          setTags(data.userGame.tags.map(t => typeof t === 'string' ? t : t.tag));
+        }
       } catch (err) {
         console.error('Error fetching game:', err);
         setError('Failed to load game. Please try again.');
@@ -36,10 +43,81 @@ export default function UpdateGame({ params }) {
       }
     }
 
+    async function fetchAvailableTags() {
+      try {
+        const res = await fetch('/api/user/tags');
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableTags(data.tags || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tags:', err);
+      }
+    }
+
     if (id) {
       fetchGame();
+      fetchAvailableTags();
     }
   }, [id]);
+
+  const handleAddTag = async (tag) => {
+    const normalizedTag = tag.toLowerCase().trim();
+    if (!normalizedTag || tags.includes(normalizedTag)) {
+      setTagInput('');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/user/games/${id}/tags`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag: normalizedTag }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to add tag');
+      }
+
+      setTags(prev => [...prev, normalizedTag].sort());
+      setTagInput('');
+      // Add to available tags if not already there
+      if (!availableTags.includes(normalizedTag)) {
+        setAvailableTags(prev => [...prev, normalizedTag].sort());
+      }
+    } catch (err) {
+      console.error('Error adding tag:', err);
+    }
+  };
+
+  const handleRemoveTag = async (tag) => {
+    try {
+      const res = await fetch(`/api/user/games/${id}/tags`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to remove tag');
+      }
+
+      setTags(prev => prev.filter(t => t !== tag));
+    } catch (err) {
+      console.error('Error removing tag:', err);
+    }
+  };
+
+  const handleTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        handleAddTag(tagInput);
+      }
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -303,6 +381,73 @@ export default function UpdateGame({ params }) {
                       </button>
                     </div>
                   </form>
+                )}
+              </div>
+
+              {/* Tags Section */}
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-sm font-medium mb-2">Tags</h3>
+
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="hover:text-indigo-600 font-bold ml-1"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleTagKeyDown}
+                    className="w-full p-2 border rounded text-sm"
+                    placeholder="Type a tag and press Enter..."
+                    list="tag-suggestions"
+                  />
+                  {availableTags.length > 0 && (
+                    <datalist id="tag-suggestions">
+                      {availableTags
+                        .filter(tag => !tags.includes(tag))
+                        .map(tag => (
+                          <option key={tag} value={tag} />
+                        ))}
+                    </datalist>
+                  )}
+                </div>
+
+                {availableTags.filter(tag => !tags.includes(tag)).length > 0 && (
+                  <div className="mt-2">
+                    <span className="text-xs text-gray-500">Quick add: </span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {availableTags
+                        .filter(tag => !tags.includes(tag))
+                        .slice(0, 6)
+                        .map(tag => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() => handleAddTag(tag)}
+                            className="text-xs px-2 py-1 bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-800 rounded"
+                          >
+                            + {tag}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
                 )}
               </div>
 
