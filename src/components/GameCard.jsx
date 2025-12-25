@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import TagInput from './TagInput';
 
 const STATE_TRANSITIONS = {
   WISHLIST: ['BACKLOG', 'CURRENTLY_PLAYING'],
@@ -46,14 +47,23 @@ const statusConfig = {
   },
 };
 
-export default function GameCard({ userGame, onUpdate, onRemove }) {
-  const { id, game, progressPercent, status, queue } = userGame;
+export default function GameCard({ userGame, onUpdate, onRemove, availableTags = [] }) {
+  const { id, game, progressPercent, status, queue, tags: initialTags } = userGame;
   const [progress, setProgress] = useState(progressPercent);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isProgressModalOpen, setIsProgressModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingTransition, setPendingTransition] = useState(null);
   const [error, setError] = useState(null);
+  const [tags, setTags] = useState([]);
+  const [showTagInput, setShowTagInput] = useState(false);
+
+  useEffect(() => {
+    // Extract tag strings from tag objects
+    if (initialTags) {
+      setTags(initialTags.map(t => typeof t === 'string' ? t : t.tag));
+    }
+  }, [initialTags]);
 
   const validTransitions = STATE_TRANSITIONS[status] || [];
 
@@ -172,6 +182,36 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
     }
   };
 
+  const handleAddTag = async (tag) => {
+    const res = await fetch(`/api/user/games/${id}/tags`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tag }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to add tag');
+    }
+
+    setTags(prev => [...prev, tag].sort());
+  };
+
+  const handleRemoveTag = async (tag) => {
+    const res = await fetch(`/api/user/games/${id}/tags`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tag }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to remove tag');
+    }
+
+    setTags(prev => prev.filter(t => t !== tag));
+  };
+
   const currentStatusConfig = statusConfig[status];
 
   return (
@@ -205,6 +245,47 @@ export default function GameCard({ userGame, onUpdate, onRemove }) {
         {queue && (
           <p className="text-sm text-gray-600 mb-2">Queue: {queue.name}</p>
         )}
+
+        {/* Tags section */}
+        <div className="mb-3">
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs rounded-full"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="hover:text-indigo-600 font-bold"
+                    aria-label={`Remove ${tag} tag`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {showTagInput ? (
+            <TagInput
+              tags={[]}
+              availableTags={availableTags.filter(t => !tags.includes(t))}
+              onAddTag={handleAddTag}
+              onRemoveTag={() => {}}
+              placeholder="Type tag and press Enter..."
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowTagInput(true)}
+              className="text-xs text-indigo-600 hover:text-indigo-800"
+            >
+              + Add tag
+            </button>
+          )}
+        </div>
 
         <div className="mb-3">
           <div className="w-full bg-gray-200 rounded-full h-2.5">

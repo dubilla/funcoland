@@ -30,6 +30,11 @@ export async function GET(request, { params }) {
             id: true,
             name: true,
           }
+        },
+        tags: {
+          select: {
+            tag: true,
+          }
         }
       }
     });
@@ -108,6 +113,11 @@ export async function PATCH(request, { params }) {
               name: true,
             },
           },
+          tags: {
+            select: {
+              tag: true,
+            },
+          },
         },
       });
 
@@ -126,6 +136,11 @@ export async function PATCH(request, { params }) {
           select: {
             id: true,
             name: true,
+          },
+        },
+        tags: {
+          select: {
+            tag: true,
           },
         },
       },
