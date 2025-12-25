@@ -320,3 +320,227 @@ export async function reorderQueueGames(queueId, gameOrders) {
 
   return true;
 }
+
+/**
+ * Add a tag to a user's game
+ * @param {string} userGameId - UserGame ID
+ * @param {string} tag - Tag to add (case-insensitive, stored lowercase)
+ * @returns {Promise<Object>} - The created tag
+ */
+export async function addTagToUserGame(userGameId, tag) {
+  const normalizedTag = tag.toLowerCase().trim();
+
+  if (!normalizedTag) {
+    throw new Error('Tag cannot be empty');
+  }
+
+  return prisma.userGameTag.create({
+    data: {
+      userGameId,
+      tag: normalizedTag,
+    },
+  });
+}
+
+/**
+ * Remove a tag from a user's game
+ * @param {string} userGameId - UserGame ID
+ * @param {string} tag - Tag to remove
+ * @returns {Promise<Object>} - The deleted tag
+ */
+export async function removeTagFromUserGame(userGameId, tag) {
+  const normalizedTag = tag.toLowerCase().trim();
+
+  return prisma.userGameTag.delete({
+    where: {
+      userGameId_tag: {
+        userGameId,
+        tag: normalizedTag,
+      },
+    },
+  });
+}
+
+/**
+ * Get all tags for a user's game
+ * @param {string} userGameId - UserGame ID
+ * @returns {Promise<Array<string>>} - List of tags
+ */
+export async function getTagsForUserGame(userGameId) {
+  const tags = await prisma.userGameTag.findMany({
+    where: { userGameId },
+    select: { tag: true },
+    orderBy: { tag: 'asc' },
+  });
+
+  return tags.map(t => t.tag);
+}
+
+/**
+ * Get all unique tags for a user across all their games
+ * @param {string} userId - User ID
+ * @returns {Promise<Array<string>>} - List of unique tags
+ */
+export async function getAllUserTags(userId) {
+  const tags = await prisma.userGameTag.findMany({
+    where: {
+      userGame: {
+        userId,
+      },
+    },
+    distinct: ['tag'],
+    select: { tag: true },
+    orderBy: { tag: 'asc' },
+  });
+
+  return tags.map(t => t.tag);
+}
+
+/**
+ * Find user games matching all specified tags (AND logic)
+ * @param {string} userId - User ID
+ * @param {Array<string>} tags - Tags to match
+ * @returns {Promise<Array>} - List of user games with all specified tags
+ */
+export async function findUserGamesByTags(userId, tags) {
+  if (!tags || tags.length === 0) {
+    return [];
+  }
+
+  const normalizedTags = tags.map(t => t.toLowerCase().trim());
+
+  // Find userGames that have ALL the specified tags
+  const userGames = await prisma.userGame.findMany({
+    where: {
+      userId,
+      AND: normalizedTags.map(tag => ({
+        tags: {
+          some: {
+            tag,
+          },
+        },
+      })),
+    },
+    include: {
+      game: true,
+      tags: true,
+      queue: true,
+    },
+  });
+
+  return userGames;
+}
+
+/**
+ * Create a new game queue with tag filters
+ * @param {string} userId - User ID
+ * @param {string} name - Queue name
+ * @param {string} description - Queue description
+ * @param {Array<string>} filterTags - Tags to filter by
+ * @returns {Promise<Object>} - The created queue with matching games
+ */
+export async function createGameQueueWithFilters(userId, name, description = '', filterTags = []) {
+  // Check if user already has a queue with this name
+  const existingQueue = await prisma.gameQueue.findUnique({
+    where: {
+      userId_name: {
+        userId,
+        name,
+      },
+    },
+  });
+
+  if (existingQueue) {
+    throw new Error(`Queue with name "${name}" already exists`);
+  }
+
+  // Check if user has any queues yet
+  const queueCount = await prisma.gameQueue.count({
+    where: { userId },
+  });
+
+  const normalizedTags = filterTags.map(t => t.toLowerCase().trim()).filter(Boolean);
+
+  // Create the queue
+  const queue = await prisma.gameQueue.create({
+    data: {
+      userId,
+      name,
+      description,
+      isDefault: queueCount === 0,
+      filterTags: normalizedTags,
+    },
+  });
+
+  // If there are filter tags, find matching games and add them to the queue
+  if (normalizedTags.length > 0) {
+    const matchingGames = await findUserGamesByTags(userId, normalizedTags);
+
+    // Add matching games to the queue with positions
+    for (let i = 0; i < matchingGames.length; i++) {
+      await prisma.userGame.update({
+        where: { id: matchingGames[i].id },
+        data: {
+          queueId: queue.id,
+          queuePosition: i,
+        },
+      });
+    }
+  }
+
+  // Return queue with games
+  return prisma.gameQueue.findUnique({
+    where: { id: queue.id },
+    include: {
+      games: {
+        include: {
+          game: true,
+          tags: true,
+        },
+        orderBy: {
+          queuePosition: 'asc',
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Find games that match a queue's filters but aren't in the queue
+ * @param {string} queueId - Queue ID
+ * @returns {Promise<Array>} - List of matching games not in queue
+ */
+export async function findNewQueueMatches(queueId) {
+  const queue = await prisma.gameQueue.findUnique({
+    where: { id: queueId },
+    select: {
+      userId: true,
+      filterTags: true,
+    },
+  });
+
+  if (!queue || queue.filterTags.length === 0) {
+    return [];
+  }
+
+  // Find games matching the filter tags but not already in this queue
+  const matchingGames = await prisma.userGame.findMany({
+    where: {
+      userId: queue.userId,
+      queueId: { not: queueId },
+      AND: queue.filterTags.map(tag => ({
+        tags: {
+          some: {
+            tag,
+          },
+        },
+      })),
+    },
+    include: {
+      game: true,
+      tags: true,
+    },
+  });
+
+  return matchingGames;
+}
