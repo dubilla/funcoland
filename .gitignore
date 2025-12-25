@@ -37,8 +37,9 @@ yarn-error.log*
 next-env.d.ts
 
 # markdown files
-*.md
 BACKLOG.md
+PRD.md
 
 # claude
 .claude/settings.local.json
+.claude/commands/*
