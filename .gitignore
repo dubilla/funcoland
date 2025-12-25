@@ -39,3 +39,6 @@ next-env.d.ts
 # markdown files
 *.md
 BACKLOG.md
+
+# claude
+.claude/settings.local.json
