@@ -198,18 +198,22 @@ export default function GameCard({ userGame, onUpdate, onRemove, availableTags =
   };
 
   const handleRemoveTag = async (tag) => {
-    const res = await fetch(`/api/user/games/${id}/tags`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tag }),
-    });
+    try {
+      const res = await fetch(`/api/user/games/${id}/tags`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tag }),
+      });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to remove tag');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to remove tag');
+      }
+
+      setTags(prev => prev.filter(t => t !== tag));
+    } catch (err) {
+      console.error('Error removing tag:', err);
     }
-
-    setTags(prev => prev.filter(t => t !== tag));
   };
 
   const currentStatusConfig = statusConfig[status];

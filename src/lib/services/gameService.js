@@ -524,10 +524,14 @@ export async function findNewQueueMatches(queueId) {
   }
 
   // Find games matching the filter tags but not already in this queue
+  // Use OR to include both games with no queue (null) and games in other queues
   const matchingGames = await prisma.userGame.findMany({
     where: {
       userId: queue.userId,
-      queueId: { not: queueId },
+      OR: [
+        { queueId: null },
+        { queueId: { not: queueId } },
+      ],
       AND: queue.filterTags.map(tag => ({
         tags: {
           some: {

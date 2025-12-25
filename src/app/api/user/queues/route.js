@@ -69,10 +69,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Queue name is required' }, { status: 400 });
     }
 
+    if (filterTags && !Array.isArray(filterTags)) {
+      return NextResponse.json({ error: 'filterTags must be an array' }, { status: 400 });
+    }
+
     const userId = session.user.id;
 
     // Use the filter-aware function if tags are provided
-    const queue = filterTags && filterTags.length > 0
+    const queue = Array.isArray(filterTags) && filterTags.length > 0
       ? await createGameQueueWithFilters(userId, name, description, filterTags)
       : await createGameQueue(userId, name, description);
 
