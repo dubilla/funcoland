@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getEffectiveMainTime, formatTime } from '@/lib/utils/playTime';
 
 export default function UpdateGame({ params }) {
   const { id } = params || {};
@@ -13,8 +14,11 @@ export default function UpdateGame({ params }) {
   const [tags, setTags] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  const [customMainTimeHours, setCustomMainTimeHours] = useState('');
+  const [customCompletionTimeHours, setCustomCompletionTimeHours] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingTime, setIsSavingTime] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -34,6 +38,13 @@ export default function UpdateGame({ params }) {
         // Extract tag strings from tag objects
         if (data.userGame.tags) {
           setTags(data.userGame.tags.map(t => typeof t === 'string' ? t : t.tag));
+        }
+        // Initialize custom time fields (convert minutes to hours for display)
+        if (data.userGame.customMainTime) {
+          setCustomMainTimeHours((data.userGame.customMainTime / 60).toString());
+        }
+        if (data.userGame.customCompletionTime) {
+          setCustomCompletionTimeHours((data.userGame.customCompletionTime / 60).toString());
         }
       } catch (err) {
         console.error('Error fetching game:', err);
@@ -196,28 +207,47 @@ export default function UpdateGame({ params }) {
     }
   };
 
-  // Calculate time remaining based on progress and HLTB time
+  // Calculate time remaining based on progress and effective time
   const calculateTimeRemaining = () => {
-    if (!userGame || !userGame.game.hltbMainTime) return null;
+    const totalTime = getEffectiveMainTime(userGame);
+    if (!totalTime) return null;
 
-    const totalTime = userGame.game.hltbMainTime; // in minutes
     const completed = progress / 100;
     const remainingTime = totalTime * (1 - completed);
 
     return remainingTime; // in minutes
   };
 
-  // Format time in hours and minutes
-  const formatTime = (minutes) => {
-    if (!minutes) return 'Unknown';
+  // Save custom play times
+  const handleSaveCustomTimes = async () => {
+    setIsSavingTime(true);
+    setError(null);
 
-    const hours = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
+    try {
+      const customMainTime = customMainTimeHours ? Math.round(parseFloat(customMainTimeHours) * 60) : null;
+      const customCompletionTime = customCompletionTimeHours ? Math.round(parseFloat(customCompletionTimeHours) * 60) : null;
 
-    if (hours === 0) return `${mins} minutes`;
-    if (mins === 0) return `${hours} hours`;
-    return `${hours} hours, ${mins} minutes`;
+      const res = await fetch(`/api/user/games/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customMainTime, customCompletionTime }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to save custom times');
+      }
+
+      const data = await res.json();
+      setUserGame(data.userGame);
+      setSuccessMessage('Play times updated!');
+    } catch (err) {
+      console.error('Error saving custom times:', err);
+      setError('Failed to save custom times. Please try again.');
+    } finally {
+      setIsSavingTime(false);
+    }
   };
+
 
   if (isLoading) {
     return (
@@ -451,6 +481,59 @@ export default function UpdateGame({ params }) {
                 )}
               </div>
 
+              {/* Play Time Section */}
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-sm font-medium mb-3">How Long to Beat</h3>
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Main Story (hours)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={customMainTimeHours}
+                      onChange={(e) => setCustomMainTimeHours(e.target.value)}
+                      placeholder={game.hltbMainTime ? `${(game.hltbMainTime / 60).toFixed(1)}` : 'Enter hours'}
+                      className="w-full p-2 border rounded text-sm"
+                    />
+                    {game.hltbMainTime && !userGame.customMainTime && (
+                      <p className="text-xs text-gray-400 mt-1">HLTB: {formatTime(game.hltbMainTime)}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">Completionist (hours)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={customCompletionTimeHours}
+                      onChange={(e) => setCustomCompletionTimeHours(e.target.value)}
+                      placeholder={game.hltbCompletionTime ? `${(game.hltbCompletionTime / 60).toFixed(1)}` : 'Enter hours'}
+                      className="w-full p-2 border rounded text-sm"
+                    />
+                    {game.hltbCompletionTime && !userGame.customCompletionTime && (
+                      <p className="text-xs text-gray-400 mt-1">HLTB: {formatTime(game.hltbCompletionTime)}</p>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveCustomTimes}
+                  disabled={isSavingTime}
+                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded hover:bg-gray-200 disabled:bg-gray-50 text-sm cursor-pointer"
+                >
+                  {isSavingTime ? 'Saving...' : 'Save Play Times'}
+                </button>
+
+                {getEffectiveMainTime(userGame) && (
+                  <p className="text-xs text-center text-gray-500 mt-2">
+                    Using: {formatTime(getEffectiveMainTime(userGame))} {userGame.customMainTime ? '(custom)' : '(HLTB)'}
+                  </p>
+                )}
+              </div>
+
               <div className="mt-auto">
                 <div className="border-t pt-4">
                   <h3 className="text-sm font-medium mb-2">Game Info</h3>
@@ -459,12 +542,6 @@ export default function UpdateGame({ params }) {
                       <div>
                         <p className="text-gray-600">Released</p>
                         <p>{new Date(game.releaseDate).toLocaleDateString()}</p>
-                      </div>
-                    )}
-                    {game.hltbMainTime && (
-                      <div>
-                        <p className="text-gray-600">Main Story</p>
-                        <p>{formatTime(game.hltbMainTime)}</p>
                       </div>
                     )}
                     {game.developer && (

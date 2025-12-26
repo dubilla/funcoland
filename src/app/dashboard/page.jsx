@@ -3,13 +3,11 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import prisma from '@/lib/db';
-
-// Helper function to format time
-const formatHours = (minutes) => {
-  if (!minutes) return '0h';
-  const hours = Math.round(minutes / 60);
-  return `${hours}h`;
-};
+import {
+  getEffectiveMainTime,
+  getEffectiveCompletionTime,
+  formatHours,
+} from '@/lib/utils/playTime';
 
 export default async function Dashboard() {
   const session = await getServerSession(authOptions);
@@ -81,15 +79,17 @@ export default async function Dashboard() {
     let completedTime = 0;
 
     queue.games.forEach(userGame => {
-      const { game, progressPercent } = userGame;
+      const { progressPercent } = userGame;
+      const mainTime = getEffectiveMainTime(userGame);
+      const completionTime = getEffectiveCompletionTime(userGame);
 
-      if (game.hltbMainTime) {
-        totalMainTime += game.hltbMainTime;
-        completedTime += (game.hltbMainTime * progressPercent) / 100;
+      if (mainTime) {
+        totalMainTime += mainTime;
+        completedTime += (mainTime * progressPercent) / 100;
       }
 
-      if (game.hltbCompletionTime) {
-        totalCompletionTime += game.hltbCompletionTime;
+      if (completionTime) {
+        totalCompletionTime += completionTime;
       }
     });
 
@@ -233,8 +233,8 @@ export default async function Dashboard() {
                       </div>
                       <div className="flex justify-between text-xs text-gray-400 mt-2 font-mono">
                         <span>{userGame.progressPercent}% complete</span>
-                        {userGame.game.hltbMainTime && (
-                          <span>~{formatHours(userGame.game.hltbMainTime)} total</span>
+                        {getEffectiveMainTime(userGame) && (
+                          <span>~{formatHours(getEffectiveMainTime(userGame))} total</span>
                         )}
                       </div>
                     </div>
@@ -288,8 +288,8 @@ export default async function Dashboard() {
 
                     <div className="flex justify-between text-xs text-gray-400 mb-4 font-mono">
                       <span>Not started</span>
-                      {userGame.game.hltbMainTime && (
-                        <span>~{formatHours(userGame.game.hltbMainTime)}</span>
+                      {getEffectiveMainTime(userGame) && (
+                        <span>~{formatHours(getEffectiveMainTime(userGame))}</span>
                       )}
                     </div>
 

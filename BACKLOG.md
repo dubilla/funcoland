@@ -37,19 +37,20 @@
 
 ## Feature Development (Prioritized)
 
-### 1. Tag System
+### 1. Tag System ✅
 **Goal**: Enable cross-cutting categorization beyond queues
 
-- [ ] Database: Create Tag model with many-to-many relationship to Game
-- [ ] Database: Add migration for tags and GameTag junction table
-- [ ] API: Create tag CRUD endpoints (create, read, update, delete)
-- [ ] API: Add tag assignment/removal for games
-- [ ] UI: Tag management page (create/edit/delete tags)
-- [ ] UI: Tag selector when adding/editing games
-- [ ] UI: Tag filter on dashboard and game lists
-- [ ] UI: Tag badges on game cards
+- [x] Database: Create Tag model with many-to-many relationship to Game
+- [x] Database: Add migration for tags and GameTag junction table
+- [x] API: Create tag CRUD endpoints (create, read, update, delete)
+- [x] API: Add tag assignment/removal for games
+- [x] UI: Tag selector when adding/editing games
+- [x] UI: Tag badges on game cards
+- [x] Feature: Tag-based queue filtering
+
+**Not implemented (nice to have):**
+- [ ] UI: Standalone tag management page (create/edit/delete tags)
 - [ ] Feature: Predefined tag suggestions (RPG, Action, Multiplayer, Short Game, etc.)
-- [ ] Feature: Tag-based queue filtering
 
 ### 2. Weekly Play Time Calculator
 **Goal**: Show "time until playing" based on weekly availability
