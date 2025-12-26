@@ -69,6 +69,8 @@ model UserGame {
   rating          Int?        // 1-10
   queueId         String?
   queuePosition   Int?
+  customMainTime  Int?        // User override for main story time (minutes)
+  customCompletionTime Int?   // User override for completionist time (minutes)
   startedAt       DateTime?
   completedAt     DateTime?
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)

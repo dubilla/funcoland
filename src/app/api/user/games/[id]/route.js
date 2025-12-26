@@ -65,7 +65,7 @@ export async function PATCH(request, { params }) {
 
   try {
     const { id } = params;
-    const { progressPercent, status } = await request.json();
+    const { progressPercent, status, customMainTime, customCompletionTime } = await request.json();
 
     // Verify this game belongs to the current user
     const userGame = await prisma.userGame.findUnique({
@@ -124,8 +124,28 @@ export async function PATCH(request, { params }) {
       return NextResponse.json({ userGame: fullUserGame });
     }
 
-    // Progress-only update (no status change)
-    await updateGameProgress(id, progressPercent, undefined);
+    // Build update data for non-status changes
+    const updateData = {};
+
+    if (progressPercent !== undefined) {
+      updateData.progressPercent = Math.max(0, Math.min(100, progressPercent));
+    }
+
+    if (customMainTime !== undefined) {
+      updateData.customMainTime = customMainTime === null ? null : Math.max(0, customMainTime);
+    }
+
+    if (customCompletionTime !== undefined) {
+      updateData.customCompletionTime = customCompletionTime === null ? null : Math.max(0, customCompletionTime);
+    }
+
+    // Update if there's anything to update
+    if (Object.keys(updateData).length > 0) {
+      await prisma.userGame.update({
+        where: { id },
+        data: updateData,
+      });
+    }
 
     // Get the full user game with related data for the response
     const fullUserGame = await prisma.userGame.findUnique({
