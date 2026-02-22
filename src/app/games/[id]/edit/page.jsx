@@ -248,16 +248,34 @@ export default function UpdateGame({ params }) {
     }
   };
 
+  const statusStyles = {
+    CURRENTLY_PLAYING: 'bg-green-500/20 text-green-400 border border-green-500/30',
+    COMPLETED: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+    BACKLOG: 'bg-gray-500/20 text-gray-400 border border-gray-500/30',
+    ABANDONED: 'bg-red-500/20 text-red-400 border border-red-500/30',
+    WISHLIST: 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
+  };
+
+  const statusLabels = {
+    CURRENTLY_PLAYING: 'Playing',
+    BACKLOG: 'Backlog',
+    COMPLETED: 'Completed',
+    ABANDONED: 'Abandoned',
+    WISHLIST: 'Wishlist',
+  };
+
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mx-auto mb-4"></div>
-            <div className="h-40 bg-gray-200 rounded mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded w-full mb-4"></div>
-            <div className="h-8 bg-gray-200 rounded w-full mb-4"></div>
-            <div className="h-12 bg-gray-200 rounded w-full"></div>
+      <div className="min-h-screen bg-[#0a0e27] flex items-center justify-center">
+        <div className="max-w-4xl w-full mx-auto px-4 py-8">
+          <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-8">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-700 rounded w-1/3"></div>
+              <div className="h-48 bg-gray-700 rounded"></div>
+              <div className="h-8 bg-gray-700 rounded w-full"></div>
+              <div className="h-8 bg-gray-700 rounded w-full"></div>
+              <div className="h-12 bg-gray-700 rounded w-full"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -266,11 +284,13 @@ export default function UpdateGame({ params }) {
 
   if (error && !userGame) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Link href="/dashboard" className="text-blue-600 hover:text-blue-800">
-            Return to Dashboard
+      <div className="min-h-screen bg-[#0a0e27] flex items-center justify-center">
+        <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-red-500/20 rounded-2xl p-8 text-center max-w-md">
+          <div className="bg-red-500/10 border border-red-500/30 text-red-400 py-3 px-4 rounded-lg mb-4">
+            {error}
+          </div>
+          <Link href="/dashboard" className="text-cyan-400 hover:text-cyan-300 transition-colors font-mono">
+            ← Return to Dashboard
           </Link>
         </div>
       </div>
@@ -279,11 +299,11 @@ export default function UpdateGame({ params }) {
 
   if (!userGame) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <p className="text-gray-600 mb-4">Game not found</p>
-          <Link href="/dashboard" className="text-blue-600 hover:text-blue-800">
-            Return to Dashboard
+      <div className="min-h-screen bg-[#0a0e27] flex items-center justify-center">
+        <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-8 text-center max-w-md">
+          <p className="text-gray-400 mb-4">Game not found</p>
+          <Link href="/dashboard" className="text-cyan-400 hover:text-cyan-300 transition-colors font-mono">
+            ← Return to Dashboard
           </Link>
         </div>
       </div>
@@ -294,265 +314,275 @@ export default function UpdateGame({ params }) {
   const timeRemaining = calculateTimeRemaining();
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold truncate max-w-md">{game.title}</h1>
-        <Link href="/dashboard" className="text-blue-600 hover:text-blue-800">
-          Back to Dashboard
-        </Link>
+    <div className="min-h-screen bg-[#0a0e27] relative">
+      {/* Background blobs */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <div className="md:flex">
-          <div className="md:w-1/3 relative">
-            <div className="h-64 md:h-full relative">
-              {game.coverImageUrl ? (
-                <Image
-                  src={game.coverImageUrl}
-                  alt={game.title}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                />
-              ) : (
-                <div className="h-full w-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-400">No image</span>
-                </div>
-              )}
+      {/* Grid pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none"></div>
+
+      <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-black truncate max-w-md text-white">{game.title}</h1>
+          <Link href="/dashboard" className="text-cyan-400 hover:text-cyan-300 transition-colors text-sm font-mono flex-shrink-0 ml-4">
+            ← Back to Dashboard
+          </Link>
+        </div>
+
+        <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-purple-500/20 rounded-2xl overflow-hidden">
+          <div className="md:flex">
+            {/* Cover image */}
+            <div className="md:w-1/3 relative">
+              <div className="h-64 md:h-full relative">
+                {game.coverImageUrl ? (
+                  <Image
+                    src={game.coverImageUrl}
+                    alt={game.title}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div className="h-full w-full bg-gray-800 flex items-center justify-center">
+                    <span className="text-gray-500">No image</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:to-[#0f172a]"></div>
+              </div>
             </div>
-          </div>
 
-          <div className="p-6 md:w-2/3">
-            <div className="flex flex-col h-full">
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-lg font-semibold">Game Progress</h2>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    status === 'CURRENTLY_PLAYING' ? 'bg-green-100 text-green-800' :
-                    status === 'COMPLETED' ? 'bg-blue-100 text-blue-800' :
-                    status === 'BACKLOG' ? 'bg-gray-100 text-gray-800' :
-                    status === 'ABANDONED' ? 'bg-red-100 text-red-800' :
-                    'bg-purple-100 text-purple-800'
-                  }`}>
-                    {status === 'CURRENTLY_PLAYING' ? 'Playing' :
-                     status === 'BACKLOG' ? 'Backlog' :
-                     status === 'COMPLETED' ? 'Completed' :
-                     status === 'ABANDONED' ? 'Abandoned' : 'Wishlist'}
-                  </span>
-                </div>
+            {/* Content */}
+            <div className="p-6 md:w-2/3">
+              <div className="flex flex-col h-full space-y-6">
+                {/* Progress section */}
+                <div>
+                  <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-lg font-bold text-white">Game Progress</h2>
+                    <span className={`px-3 py-1 rounded-full text-xs font-mono font-bold ${statusStyles[status] || statusStyles.BACKLOG}`}>
+                      {statusLabels[status] || status}
+                    </span>
+                  </div>
 
-                {status === 'BACKLOG' ? (
-                  <div className="py-2 mb-4">
+                  {status === 'BACKLOG' ? (
                     <button
                       onClick={handleStartPlaying}
-                      className="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"
+                      className="w-full bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-400 hover:to-cyan-400 text-white font-bold py-3 px-4 rounded-lg transition-all hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] flex items-center justify-center gap-2"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                       </svg>
                       Start Playing
                     </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Progress: {progress}%
-                        </label>
-                        {userGame.game.hltbMainTime && status !== 'COMPLETED' && (
-                          <span className="text-sm text-gray-600">
-                            {timeRemaining > 0 ? `~${formatTime(timeRemaining)} remaining` : 'Completed!'}
-                          </span>
-                        )}
+                  ) : (
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <label className="text-sm font-mono text-gray-400 uppercase tracking-wider">
+                            Progress: <span className="text-white">{progress}%</span>
+                          </label>
+                          {userGame.game.hltbMainTime && status !== 'COMPLETED' && (
+                            <span className="text-sm text-gray-400 font-mono">
+                              {timeRemaining > 0 ? `~${formatTime(timeRemaining)} left` : 'Done!'}
+                            </span>
+                          )}
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={progress}
+                          onChange={(e) => setProgress(parseInt(e.target.value, 10))}
+                          className="w-full accent-purple-500"
+                        />
+                        <div className="flex justify-between text-xs text-gray-600 mt-1 font-mono">
+                          <span>0%</span>
+                          <span>50%</span>
+                          <span>100%</span>
+                        </div>
                       </div>
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={progress}
-                        onChange={(e) => setProgress(parseInt(e.target.value, 10))}
-                        className="w-full"
-                      />
-                      <div className="grid grid-cols-3 text-xs text-gray-400 mt-1">
-                        <span>0%</span>
-                        <span className="text-center">50%</span>
-                        <span className="text-right">100%</span>
-                      </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Status
-                      </label>
-                      <select
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        className="w-full p-2 border rounded"
-                      >
-                        <option value="BACKLOG">Backlog</option>
-                        <option value="CURRENTLY_PLAYING">Currently Playing</option>
-                        <option value="COMPLETED">Completed</option>
-                        <option value="ABANDONED">Abandoned</option>
-                        <option value="WISHLIST">Wishlist</option>
-                      </select>
-                    </div>
-
-                    {error && <p className="text-red-600 text-sm">{error}</p>}
-                    {successMessage && <p className="text-green-600 text-sm">{successMessage}</p>}
-
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={isSaving}
-                        className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:bg-blue-400"
-                      >
-                        {isSaving ? 'Saving...' : 'Update Progress'}
-                      </button>
-                    </div>
-                  </form>
-                )}
-              </div>
-
-              {/* Tags Section */}
-              <div className="border-t pt-4 mt-4">
-                <h3 className="text-sm font-medium mb-2">Tags</h3>
-
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full"
-                      >
-                        {tag}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="hover:text-indigo-600 font-bold ml-1"
+                      <div>
+                        <label className="block text-xs font-mono text-gray-400 uppercase tracking-wider mb-2">Status</label>
+                        <select
+                          value={status}
+                          onChange={(e) => setStatus(e.target.value)}
+                          className="w-full px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
                         >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+                          <option value="BACKLOG">Backlog</option>
+                          <option value="CURRENTLY_PLAYING">Currently Playing</option>
+                          <option value="COMPLETED">Completed</option>
+                          <option value="ABANDONED">Abandoned</option>
+                          <option value="WISHLIST">Wishlist</option>
+                        </select>
+                      </div>
 
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleTagKeyDown}
-                    className="w-full p-2 border rounded text-sm"
-                    placeholder="Type a tag and press Enter..."
-                    list="tag-suggestions"
-                  />
-                  {availableTags.length > 0 && (
-                    <datalist id="tag-suggestions">
-                      {availableTags
-                        .filter(tag => !tags.includes(tag))
-                        .map(tag => (
-                          <option key={tag} value={tag} />
-                        ))}
-                    </datalist>
+                      {error && (
+                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm py-3 px-4 rounded-lg">
+                          {error}
+                        </div>
+                      )}
+                      {successMessage && (
+                        <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm py-3 px-4 rounded-lg">
+                          {successMessage}
+                        </div>
+                      )}
+
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={isSaving}
+                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-bold py-2 px-6 rounded-lg transition-all hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isSaving ? 'Saving...' : 'Update Progress'}
+                        </button>
+                      </div>
+                    </form>
                   )}
                 </div>
 
-                {availableTags.filter(tag => !tags.includes(tag)).length > 0 && (
-                  <div className="mt-2">
-                    <span className="text-xs text-gray-500">Quick add: </span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {availableTags
-                        .filter(tag => !tags.includes(tag))
-                        .slice(0, 6)
-                        .map(tag => (
+                {/* Tags section */}
+                <div className="border-t border-gray-800 pt-5">
+                  <h3 className="text-xs font-mono text-gray-400 uppercase tracking-wider mb-3">Tags</h3>
+
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 px-3 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 text-sm rounded-full"
+                        >
+                          {tag}
                           <button
-                            key={tag}
                             type="button"
-                            onClick={() => handleAddTag(tag)}
-                            className="text-xs px-2 py-1 bg-gray-100 hover:bg-indigo-100 text-gray-700 hover:text-indigo-800 rounded"
+                            onClick={() => handleRemoveTag(tag)}
+                            className="hover:text-purple-100 font-bold ml-1 leading-none"
                           >
-                            + {tag}
+                            ×
                           </button>
-                        ))}
+                        </span>
+                      ))}
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
 
-              {/* Play Time Section */}
-              <div className="border-t pt-4 mt-4">
-                <h3 className="text-sm font-medium mb-3">How Long to Beat</h3>
-
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Main Story (hours)</label>
+                  <div className="relative">
                     <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      value={customMainTimeHours}
-                      onChange={(e) => setCustomMainTimeHours(e.target.value)}
-                      placeholder={game.hltbMainTime ? `${(game.hltbMainTime / 60).toFixed(1)}` : 'Enter hours'}
-                      className="w-full p-2 border rounded text-sm"
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleTagKeyDown}
+                      className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                      placeholder="Type a tag and press Enter..."
+                      list="tag-suggestions"
                     />
-                    {game.hltbMainTime && !userGame.customMainTime && (
-                      <p className="text-xs text-gray-400 mt-1">HLTB: {formatTime(game.hltbMainTime)}</p>
+                    {availableTags.length > 0 && (
+                      <datalist id="tag-suggestions">
+                        {availableTags
+                          .filter(tag => !tags.includes(tag))
+                          .map(tag => (
+                            <option key={tag} value={tag} />
+                          ))}
+                      </datalist>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Completionist (hours)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      min="0"
-                      value={customCompletionTimeHours}
-                      onChange={(e) => setCustomCompletionTimeHours(e.target.value)}
-                      placeholder={game.hltbCompletionTime ? `${(game.hltbCompletionTime / 60).toFixed(1)}` : 'Enter hours'}
-                      className="w-full p-2 border rounded text-sm"
-                    />
-                    {game.hltbCompletionTime && !userGame.customCompletionTime && (
-                      <p className="text-xs text-gray-400 mt-1">HLTB: {formatTime(game.hltbCompletionTime)}</p>
-                    )}
-                  </div>
+
+                  {availableTags.filter(tag => !tags.includes(tag)).length > 0 && (
+                    <div className="mt-2">
+                      <span className="text-xs text-gray-500 font-mono">Quick add: </span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {availableTags
+                          .filter(tag => !tags.includes(tag))
+                          .slice(0, 6)
+                          .map(tag => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => handleAddTag(tag)}
+                              className="text-xs px-2 py-1 bg-[#0a0e27]/50 border border-gray-700 hover:border-purple-500/50 text-gray-400 hover:text-purple-300 rounded transition-colors"
+                            >
+                              + {tag}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleSaveCustomTimes}
-                  disabled={isSavingTime}
-                  className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded hover:bg-gray-200 disabled:bg-gray-50 text-sm cursor-pointer"
-                >
-                  {isSavingTime ? 'Saving...' : 'Save Play Times'}
-                </button>
+                {/* Play time section */}
+                <div className="border-t border-gray-800 pt-5">
+                  <h3 className="text-xs font-mono text-gray-400 uppercase tracking-wider mb-3">How Long to Beat</h3>
 
-                {getEffectiveMainTime(userGame) && (
-                  <p className="text-xs text-center text-gray-500 mt-2">
-                    Using: {formatTime(getEffectiveMainTime(userGame))} {userGame.customMainTime ? '(custom)' : '(HLTB)'}
-                  </p>
-                )}
-              </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-xs text-gray-500 font-mono mb-1">Main Story (hrs)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        value={customMainTimeHours}
+                        onChange={(e) => setCustomMainTimeHours(e.target.value)}
+                        placeholder={game.hltbMainTime ? `${(game.hltbMainTime / 60).toFixed(1)}` : 'Enter hours'}
+                        className="w-full px-3 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                      />
+                      {game.hltbMainTime && !userGame.customMainTime && (
+                        <p className="text-xs text-gray-500 font-mono mt-1">HLTB: {formatTime(game.hltbMainTime)}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 font-mono mb-1">Completionist (hrs)</label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        value={customCompletionTimeHours}
+                        onChange={(e) => setCustomCompletionTimeHours(e.target.value)}
+                        placeholder={game.hltbCompletionTime ? `${(game.hltbCompletionTime / 60).toFixed(1)}` : 'Enter hours'}
+                        className="w-full px-3 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+                      />
+                      {game.hltbCompletionTime && !userGame.customCompletionTime && (
+                        <p className="text-xs text-gray-500 font-mono mt-1">HLTB: {formatTime(game.hltbCompletionTime)}</p>
+                      )}
+                    </div>
+                  </div>
 
-              <div className="mt-auto">
-                <div className="border-t pt-4">
-                  <h3 className="text-sm font-medium mb-2">Game Info</h3>
+                  <button
+                    type="button"
+                    onClick={handleSaveCustomTimes}
+                    disabled={isSavingTime}
+                    className="w-full bg-[#0a0e27]/50 border border-gray-700 hover:border-cyan-500/50 text-gray-300 hover:text-white py-2 px-4 rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSavingTime ? 'Saving...' : 'Save Play Times'}
+                  </button>
+
+                  {getEffectiveMainTime(userGame) && (
+                    <p className="text-xs text-center text-gray-500 font-mono mt-2">
+                      Using: {formatTime(getEffectiveMainTime(userGame))} {userGame.customMainTime ? '(custom)' : '(HLTB)'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Game info */}
+                <div className="border-t border-gray-800 pt-5 mt-auto">
+                  <h3 className="text-xs font-mono text-gray-400 uppercase tracking-wider mb-3">Game Info</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     {game.releaseDate && (
                       <div>
-                        <p className="text-gray-600">Released</p>
-                        <p>{new Date(game.releaseDate).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500 font-mono mb-1">RELEASED</p>
+                        <p className="text-white">{new Date(game.releaseDate).toLocaleDateString()}</p>
                       </div>
                     )}
                     {game.developer && (
                       <div>
-                        <p className="text-gray-600">Developer</p>
-                        <p>{game.developer}</p>
+                        <p className="text-xs text-gray-500 font-mono mb-1">DEVELOPER</p>
+                        <p className="text-white">{game.developer}</p>
                       </div>
                     )}
                     {game.publisher && (
                       <div>
-                        <p className="text-gray-600">Publisher</p>
-                        <p>{game.publisher}</p>
+                        <p className="text-xs text-gray-500 font-mono mb-1">PUBLISHER</p>
+                        <p className="text-white">{game.publisher}</p>
                       </div>
                     )}
                   </div>
@@ -562,6 +592,18 @@ export default function UpdateGame({ params }) {
           </div>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes blob {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+          }
+          .animate-blob { animation: blob 7s infinite; }
+          .animation-delay-2000 { animation-delay: 2s; }
+        `
+      }} />
     </div>
   );
 }
