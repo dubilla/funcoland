@@ -74,28 +74,32 @@ export default function GameSearch({ onGameSelect }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search for games..."
-            className="flex-1 px-4 py-2 border rounded-lg"
+            className="flex-1 px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
           />
           <button
             type="submit"
             disabled={isLoading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400"
+            className="px-5 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold rounded-lg transition-all hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             {isLoading ? 'Searching...' : 'Search'}
           </button>
         </div>
       </form>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm py-3 px-4 rounded-lg mb-4">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {results.map((game) => (
           <div
             key={game.id || game.apiId}
-            className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md cursor-pointer"
+            className="bg-[#0a0e27]/80 border border-cyan-500/20 rounded-xl overflow-hidden hover:border-cyan-400/50 hover:scale-105 cursor-pointer transition-all"
             onClick={() => handleGameSelect(game)}
           >
-            <div className="h-40 relative w-full bg-gray-200">
+            <div className="h-40 relative w-full bg-gray-800">
               {game.coverImageUrl ? (
                 <Image
                   src={game.coverImageUrl}
@@ -105,24 +109,24 @@ export default function GameSearch({ onGameSelect }) {
                 />
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <span className="text-gray-400">No image</span>
+                  <span className="text-gray-500 text-sm">No image</span>
                 </div>
               )}
             </div>
             <div className="p-3">
-              <h3 className="font-medium truncate">{game.title}</h3>
+              <h3 className="font-bold text-white truncate">{game.title}</h3>
               {game.releaseDate && (
-                <p className="text-sm text-gray-600">
+                <p className="text-xs text-gray-400 font-mono mt-1">
                   {new Date(game.releaseDate).getFullYear()}
                 </p>
               )}
               {(game.hltbMainTime || game.hltbCompletionTime) && (
-                <div className="mt-1 text-sm">
+                <div className="mt-1 text-xs text-gray-400 font-mono">
                   {game.hltbMainTime && (
-                    <p>Main: {Math.round(game.hltbMainTime / 60)} hours</p>
+                    <p>Main: {Math.round(game.hltbMainTime / 60)}h</p>
                   )}
                   {game.hltbCompletionTime && (
-                    <p>Complete: {Math.round(game.hltbCompletionTime / 60)} hours</p>
+                    <p>100%: {Math.round(game.hltbCompletionTime / 60)}h</p>
                   )}
                 </div>
               )}
@@ -132,7 +136,7 @@ export default function GameSearch({ onGameSelect }) {
       </div>
 
       {results.length === 0 && query && !isLoading && (
-        <p className="text-center py-8 text-gray-500">No games found. Try a different search term.</p>
+        <p className="text-center py-8 text-gray-500 font-mono">No games found. Try a different search term.</p>
       )}
     </div>
   );
