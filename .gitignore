@@ -43,3 +43,8 @@ PRD.md
 # claude
 .claude/settings.local.json
 .claude/commands/*
+.claude/review-loop.local.md
+.claude/review-loop.log
+
+# review-loop output
+/reviews
