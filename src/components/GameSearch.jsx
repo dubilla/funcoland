@@ -8,6 +8,7 @@ export default function GameSearch({ onGameSelect }) {
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isPartial, setIsPartial] = useState(false);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -16,6 +17,7 @@ export default function GameSearch({ onGameSelect }) {
 
     setIsLoading(true);
     setError(null);
+    setIsPartial(false);
 
     try {
       const res = await fetch(`/api/games/search?query=${encodeURIComponent(query)}`);
@@ -30,6 +32,7 @@ export default function GameSearch({ onGameSelect }) {
       console.log('Search results:', data);
       console.log('Games found:', data.games?.length || 0);
       setResults(data.games || []);
+      setIsPartial(!!data.partial);
     } catch (err) {
       console.error('Error searching games:', err);
       setError('Failed to search games. Please try again.');
@@ -89,6 +92,12 @@ export default function GameSearch({ onGameSelect }) {
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm py-3 px-4 rounded-lg mb-4">
           {error}
+        </div>
+      )}
+
+      {isPartial && (
+        <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm py-3 px-4 rounded-lg mb-4">
+          External search is temporarily unavailable — showing saved games only.
         </div>
       )}
 

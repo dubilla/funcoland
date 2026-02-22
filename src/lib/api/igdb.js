@@ -2,8 +2,8 @@
 // Documentation: https://api-docs.igdb.com/
 
 // IGDB requires Twitch API auth
-const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || '8s9eel47jcvmer97ji0wepn9okm9c5';
-const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || 'jhtxm4firftf11aw0c2kemlgjb5ibk';
+const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
+const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 const IGDB_ENDPOINT = 'https://api.igdb.com/v4';
 
 // Auth token cache
@@ -15,6 +15,10 @@ let tokenExpiry = null;
  * @returns {Promise<string>} Access token
  */
 async function getAccessToken() {
+  if (!TWITCH_CLIENT_ID || !TWITCH_CLIENT_SECRET) {
+    throw new Error('TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET environment variables are required');
+  }
+
   // Return cached token if it's still valid
   if (authToken && tokenExpiry && Date.now() < tokenExpiry) {
     return authToken;
