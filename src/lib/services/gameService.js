@@ -25,15 +25,12 @@ export function getValidTransitions(fromStatus) {
 }
 
 /**
- * Search for games across different sources
+ * Search for games in our database only
  * @param {string} query - Search query
- * @returns {Promise<Array>} - List of games from our database and external APIs
+ * @returns {Promise<Array>} - List of games from our database
  */
-export async function searchGames(query) {
-  console.log('[gameService] searchGames called with query:', query);
-
-  // First check if we have these games in our database
-  const dbGames = await prisma.game.findMany({
+export async function searchGamesDbOnly(query) {
+  return prisma.game.findMany({
     where: {
       title: {
         contains: query,
@@ -42,6 +39,18 @@ export async function searchGames(query) {
     },
     take: 10,
   });
+}
+
+/**
+ * Search for games across different sources
+ * @param {string} query - Search query
+ * @returns {Promise<Array>} - List of games from our database and external APIs
+ */
+export async function searchGames(query) {
+  console.log('[gameService] searchGames called with query:', query);
+
+  // First check if we have these games in our database
+  const dbGames = await searchGamesDbOnly(query);
 
   console.log('[gameService] Database results:', dbGames.length);
 
@@ -52,22 +61,17 @@ export async function searchGames(query) {
   }
 
   // Otherwise, search external API
-  try {
-    console.log('[gameService] Calling IGDB API...');
-    const igdbResults = await igdbApi.searchGames(query);
-    console.log('[gameService] IGDB raw results:', igdbResults.length);
+  console.log('[gameService] Calling IGDB API...');
+  const igdbResults = await igdbApi.searchGames(query);
+  console.log('[gameService] IGDB raw results:', igdbResults.length);
 
-    // Map the results to our model
-    const externalGames = igdbResults.map(igdbApi.mapIgdbGameToModel);
-    console.log('[gameService] Mapped external games:', externalGames.length);
+  // Map the results to our model
+  const externalGames = igdbResults.map(igdbApi.mapIgdbGameToModel);
+  console.log('[gameService] Mapped external games:', externalGames.length);
 
-    const finalResults = [...dbGames, ...externalGames].slice(0, 20);
-    console.log('[gameService] Final results:', finalResults.length);
-    return finalResults; // Return at most 20 games
-  } catch (error) {
-    console.error('[gameService] Error searching IGDB:', error);
-    return dbGames; // Return only DB results if external API fails
-  }
+  const finalResults = [...dbGames, ...externalGames].slice(0, 20);
+  console.log('[gameService] Final results:', finalResults.length);
+  return finalResults; // Return at most 20 games
 }
 
 /**

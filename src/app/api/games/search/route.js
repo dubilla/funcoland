@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { searchGames } from '@/lib/services/gameService';
+import { searchGames, searchGamesDbOnly } from '@/lib/services/gameService';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
@@ -23,6 +23,17 @@ export async function GET(request) {
     return NextResponse.json({ games });
   } catch (error) {
     console.error('Error searching games:', error);
-    return NextResponse.json({ error: 'Failed to search games' }, { status: 500 });
+
+    // IGDB failed — fall back to DB-only results and signal partial response
+    try {
+      const games = await searchGamesDbOnly(query);
+      if (games.length > 0) {
+        return NextResponse.json({ games, partial: true });
+      }
+    } catch {
+      // DB also failed, fall through to 503
+    }
+
+    return NextResponse.json({ error: 'Search unavailable, please try again later' }, { status: 503 });
   }
 }
