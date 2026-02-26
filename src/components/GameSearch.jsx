@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 
 export default function GameSearch({ onGameSelect }) {
@@ -9,18 +9,17 @@ export default function GameSearch({ onGameSelect }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isPartial, setIsPartial] = useState(false);
+  const debounceTimer = useRef(null);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-
-    if (!query.trim()) return;
+  const runSearch = async (searchQuery) => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) return;
 
     setIsLoading(true);
     setError(null);
     setIsPartial(false);
 
     try {
-      const res = await fetch(`/api/games/search?query=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/games/search?query=${encodeURIComponent(searchQuery)}`);
 
       if (!res.ok) {
         const errorText = await res.text();
@@ -29,8 +28,6 @@ export default function GameSearch({ onGameSelect }) {
       }
 
       const data = await res.json();
-      console.log('Search results:', data);
-      console.log('Games found:', data.games?.length || 0);
       setResults(data.games || []);
       setIsPartial(!!data.partial);
     } catch (err) {
@@ -39,6 +36,27 @@ export default function GameSearch({ onGameSelect }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (!query.trim() || query.trim().length < 2) {
+      setResults([]);
+      setError(null);
+      return;
+    }
+
+    clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      runSearch(query);
+    }, 350);
+
+    return () => clearTimeout(debounceTimer.current);
+  }, [query]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    clearTimeout(debounceTimer.current);
+    runSearch(query);
   };
 
   const handleGameSelect = async (game) => {
@@ -72,19 +90,26 @@ export default function GameSearch({ onGameSelect }) {
     <div className="w-full">
       <form onSubmit={handleSearch} className="mb-4">
         <div className="flex gap-2">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search for games..."
-            className="flex-1 px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
-          />
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search for games..."
+              className="w-full px-4 py-3 pr-10 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-colors"
+            />
+            {isLoading && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+              </div>
+            )}
+          </div>
           <button
             type="submit"
             disabled={isLoading}
             className="px-5 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-400 hover:to-purple-400 text-white font-bold rounded-lg transition-all hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
-            {isLoading ? 'Searching...' : 'Search'}
+            Search
           </button>
         </div>
       </form>
@@ -144,7 +169,7 @@ export default function GameSearch({ onGameSelect }) {
         ))}
       </div>
 
-      {results.length === 0 && query && !isLoading && (
+      {results.length === 0 && query.trim().length >= 2 && !isLoading && (
         <p className="text-center py-8 text-gray-500 font-mono">No games found. Try a different search term.</p>
       )}
     </div>
