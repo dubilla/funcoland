@@ -154,6 +154,23 @@ export default function GameSearch({ onGameSelect }) {
                   {new Date(game.releaseDate).getFullYear()}
                 </p>
               )}
+              {game.platforms?.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {game.platforms.slice(0, 3).map((platform) => (
+                    <span
+                      key={platform}
+                      className="px-1.5 py-0.5 text-[10px] font-mono bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded"
+                    >
+                      {platform}
+                    </span>
+                  ))}
+                  {game.platforms.length > 3 && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-mono text-gray-500">
+                      +{game.platforms.length - 3}
+                    </span>
+                  )}
+                </div>
+              )}
               {(game.hltbMainTime || game.hltbCompletionTime) && (
                 <div className="mt-1 text-xs text-gray-400 font-mono">
                   {game.hltbMainTime && (

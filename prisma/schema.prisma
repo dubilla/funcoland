@@ -52,6 +52,7 @@ model Game {
   publisher       String?
   developer       String?
   description     String?
+  platforms       String[]    @default([])
   hltbMainTime    Int?        // Minutes to beat main story
   hltbCompletionTime Int?     // Minutes for completionist run
   userGames       UserGame[]
