@@ -65,7 +65,7 @@ export async function PATCH(request, { params }) {
 
   try {
     const { id } = params;
-    const { progressPercent, status, customMainTime, customCompletionTime } = await request.json();
+    const { progressPercent, status, customMainTime, customCompletionTime, queueId } = await request.json();
 
     // Verify this game belongs to the current user
     const userGame = await prisma.userGame.findUnique({
@@ -137,6 +137,25 @@ export async function PATCH(request, { params }) {
 
     if (customCompletionTime !== undefined) {
       updateData.customCompletionTime = customCompletionTime === null ? null : Math.max(0, customCompletionTime);
+    }
+
+    // Handle queueId assignment
+    if (queueId !== undefined) {
+      if (queueId === null) {
+        updateData.queueId = null;
+        updateData.queuePosition = null;
+      } else {
+        // Verify queue belongs to user
+        const queue = await prisma.gameQueue.findUnique({
+          where: { id: queueId },
+          select: { userId: true, _count: { select: { games: true } } },
+        });
+        if (!queue || queue.userId !== session.user.id) {
+          return NextResponse.json({ error: 'Queue not found' }, { status: 404 });
+        }
+        updateData.queueId = queueId;
+        updateData.queuePosition = queue._count.games + 1;
+      }
     }
 
     // Update if there's anything to update
