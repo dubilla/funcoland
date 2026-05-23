@@ -128,9 +128,10 @@ export default function GameSearch({ onGameSelect }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {results.map((game) => (
-          <div
+          <button
+            type="button"
             key={game.id || game.apiId}
-            className="bg-[#0a0e27]/80 border border-cyan-500/20 rounded-xl overflow-hidden hover:border-cyan-400/50 hover:scale-105 cursor-pointer transition-all"
+            className="bg-[#0a0e27]/80 border border-cyan-500/20 rounded-xl overflow-hidden hover:border-cyan-400/50 active:border-cyan-400/50 hover:scale-105 active:scale-95 cursor-pointer transition-all text-left"
             onClick={() => handleGameSelect(game)}
           >
             <div className="h-40 relative w-full bg-gray-800">
@@ -165,7 +166,7 @@ export default function GameSearch({ onGameSelect }) {
                 </div>
               )}
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
