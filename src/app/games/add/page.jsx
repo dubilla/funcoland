@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import GameSearch from '@/components/GameSearch';
+import GameSearch, { getGameMeta } from '@/components/GameSearch';
 
 export default function AddGame() {
   const [isLoading, setIsLoading] = useState(false);
@@ -93,6 +93,8 @@ export default function AddGame() {
       setIsLoading(false);
     }
   };
+
+  const selectedGameMeta = selectedGame ? getGameMeta(selectedGame) : [];
 
   return (
     <div className="min-h-screen bg-[#0a0e27] relative">
@@ -196,10 +198,17 @@ export default function AddGame() {
 
                   <div>
                     <h3 className="font-bold text-white text-lg mb-1 leading-tight">{selectedGame.title}</h3>
-                    {selectedGame.releaseDate && (
-                      <p className="text-gray-400 text-xs font-mono mb-2">
-                        {new Date(selectedGame.releaseDate).getFullYear()}
-                      </p>
+                    {selectedGameMeta.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {selectedGameMeta.map(item => (
+                          <span
+                            key={item}
+                            className="text-[11px] leading-none text-gray-300 font-mono bg-purple-500/10 border border-purple-500/20 rounded px-1.5 py-1"
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
                     )}
                     {(selectedGame.hltbMainTime || selectedGame.hltbCompletionTime) && (
                       <div className="text-xs text-gray-400 font-mono space-y-0.5">

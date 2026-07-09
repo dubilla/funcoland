@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import GameSearch from '../GameSearch';
 
@@ -21,6 +21,12 @@ function setup() {
   return { user };
 }
 
+async function advanceTimers(ms) {
+  await act(async () => {
+    jest.advanceTimersByTime(ms);
+  });
+}
+
 afterEach(() => {
   jest.useRealTimers();
   jest.resetAllMocks();
@@ -34,7 +40,7 @@ describe('GameSearch', () => {
       render(<GameSearch onGameSelect={jest.fn()} />);
 
       await user.type(screen.getByPlaceholderText('Search for games...'), 'H');
-      jest.advanceTimersByTime(350);
+      await advanceTimers(350);
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -45,7 +51,7 @@ describe('GameSearch', () => {
       render(<GameSearch onGameSelect={jest.fn()} />);
 
       await user.type(screen.getByPlaceholderText('Search for games...'), 'Ha');
-      jest.advanceTimersByTime(350);
+      await advanceTimers(350);
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith('/api/games/search?query=Ha');
@@ -58,7 +64,7 @@ describe('GameSearch', () => {
       render(<GameSearch onGameSelect={jest.fn()} />);
 
       await user.type(screen.getByPlaceholderText('Search for games...'), 'Ha');
-      jest.advanceTimersByTime(349);
+      await advanceTimers(349);
 
       expect(fetch).not.toHaveBeenCalled();
     });
@@ -69,7 +75,7 @@ describe('GameSearch', () => {
       render(<GameSearch onGameSelect={jest.fn()} />);
 
       await user.type(screen.getByPlaceholderText('Search for games...'), 'Halo');
-      jest.advanceTimersByTime(350);
+      await advanceTimers(350);
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledTimes(1);
@@ -84,7 +90,7 @@ describe('GameSearch', () => {
 
       const input = screen.getByPlaceholderText('Search for games...');
       await user.type(input, 'Halo');
-      jest.advanceTimersByTime(350);
+      await advanceTimers(350);
 
       await waitFor(() => {
         expect(screen.getByText('Halo')).toBeInTheDocument();
@@ -132,10 +138,60 @@ describe('GameSearch', () => {
       render(<GameSearch onGameSelect={jest.fn()} />);
 
       await user.type(screen.getByPlaceholderText('Search for games...'), 'Zelda: BOTW');
-      jest.advanceTimersByTime(350);
+      await advanceTimers(350);
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith('/api/games/search?query=Zelda%3A%20BOTW');
+      });
+    });
+  });
+
+  describe('result metadata', () => {
+    it('shows the release year and abbreviated console names', async () => {
+      const { user } = setup();
+      mockFetchSuccess([
+        {
+          id: '1',
+          apiId: null,
+          title: 'Super Mario World',
+          coverImageUrl: null,
+          releaseDate: '1990-11-21T00:00:00.000Z',
+          platforms: ['Super Nintendo Entertainment System', 'PlayStation 2'],
+        },
+      ]);
+
+      render(<GameSearch onGameSelect={jest.fn()} />);
+
+      await user.type(screen.getByPlaceholderText('Search for games...'), 'Mario');
+      await advanceTimers(350);
+
+      await waitFor(() => {
+        expect(screen.getByText('1990')).toBeInTheDocument();
+        expect(screen.getByText('SNES')).toBeInTheDocument();
+        expect(screen.getByText('PS2')).toBeInTheDocument();
+      });
+    });
+
+    it('shows unmapped platform names as returned by the API', async () => {
+      const { user } = setup();
+      mockFetchSuccess([
+        {
+          id: '1',
+          apiId: null,
+          title: 'Indie Game',
+          coverImageUrl: null,
+          releaseDate: null,
+          platforms: ['Arcade'],
+        },
+      ]);
+
+      render(<GameSearch onGameSelect={jest.fn()} />);
+
+      await user.type(screen.getByPlaceholderText('Search for games...'), 'Indie');
+      await advanceTimers(350);
+
+      await waitFor(() => {
+        expect(screen.getByText('Arcade')).toBeInTheDocument();
       });
     });
   });

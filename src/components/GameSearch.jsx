@@ -3,6 +3,51 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 
+const PLATFORM_ABBREVIATIONS = {
+  'Super Nintendo Entertainment System': 'SNES',
+  'Nintendo 64': 'N64',
+  'Nintendo Entertainment System': 'NES',
+  'Nintendo GameCube': 'GCN',
+  'Wii U': 'Wii U',
+  'PlayStation': 'PS1',
+  'PlayStation 2': 'PS2',
+  'PlayStation 3': 'PS3',
+  'PlayStation 4': 'PS4',
+  'PlayStation 5': 'PS5',
+  'PlayStation Portable': 'PSP',
+  'PlayStation Vita': 'Vita',
+  'Xbox': 'Xbox',
+  'Xbox 360': 'X360',
+  'Xbox One': 'XOne',
+  'Xbox Series X|S': 'XSX',
+  'PC (Microsoft Windows)': 'PC',
+  'Mac': 'Mac',
+  'iOS': 'iOS',
+  'Android': 'Android',
+  'Game Boy': 'GB',
+  'Game Boy Color': 'GBC',
+  'Game Boy Advance': 'GBA',
+  'Nintendo DS': 'DS',
+  'Nintendo 3DS': '3DS',
+  'Nintendo Switch': 'Switch',
+  'Sega Genesis': 'Genesis',
+  'Mega Drive/Genesis': 'Genesis',
+  'Dreamcast': 'Dreamcast',
+};
+
+export function formatPlatform(platform) {
+  return PLATFORM_ABBREVIATIONS[platform] || platform;
+}
+
+export function getGameMeta(game) {
+  const releaseYear = game.releaseDate ? new Date(game.releaseDate).getFullYear() : null;
+  const platforms = Array.isArray(game.platforms)
+    ? game.platforms.map(formatPlatform).filter(Boolean).slice(0, 3)
+    : [];
+
+  return [releaseYear, ...platforms].filter(Boolean);
+}
+
 export default function GameSearch({ onGameSelect }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -127,47 +172,58 @@ export default function GameSearch({ onGameSelect }) {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-        {results.map((game) => (
-          <button
-            type="button"
-            key={game.id || game.apiId}
-            className="bg-[#0a0e27]/80 border border-cyan-500/20 rounded-xl overflow-hidden hover:border-cyan-400/50 active:border-cyan-400/50 hover:scale-105 active:scale-95 cursor-pointer transition-all text-left"
-            onClick={() => handleGameSelect(game)}
-          >
-            <div className="h-40 relative w-full bg-gray-800">
-              {game.coverImageUrl ? (
-                <Image
-                  src={game.coverImageUrl}
-                  alt={game.title}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <span className="text-gray-500 text-sm">No image</span>
-                </div>
-              )}
-            </div>
-            <div className="p-3">
-              <h3 className="font-bold text-white truncate">{game.title}</h3>
-              {game.releaseDate && (
-                <p className="text-xs text-gray-400 font-mono mt-1">
-                  {new Date(game.releaseDate).getFullYear()}
-                </p>
-              )}
-              {(game.hltbMainTime || game.hltbCompletionTime) && (
-                <div className="mt-1 text-xs text-gray-400 font-mono">
-                  {game.hltbMainTime && (
-                    <p>Main: {Math.round(game.hltbMainTime / 60)}h</p>
-                  )}
-                  {game.hltbCompletionTime && (
-                    <p>100%: {Math.round(game.hltbCompletionTime / 60)}h</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </button>
-        ))}
+        {results.map((game) => {
+          const meta = getGameMeta(game);
+
+          return (
+            <button
+              type="button"
+              key={game.id || game.apiId}
+              className="bg-[#0a0e27]/80 border border-cyan-500/20 rounded-xl overflow-hidden hover:border-cyan-400/50 active:border-cyan-400/50 hover:scale-105 active:scale-95 cursor-pointer transition-all text-left"
+              onClick={() => handleGameSelect(game)}
+            >
+              <div className="h-40 relative w-full bg-gray-800">
+                {game.coverImageUrl ? (
+                  <Image
+                    src={game.coverImageUrl}
+                    alt={game.title}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <span className="text-gray-500 text-sm">No image</span>
+                  </div>
+                )}
+              </div>
+              <div className="p-3">
+                <h3 className="font-bold text-white truncate">{game.title}</h3>
+                {meta.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {meta.map(item => (
+                      <span
+                        key={item}
+                        className="text-[11px] leading-none text-gray-300 font-mono bg-cyan-500/10 border border-cyan-500/20 rounded px-1.5 py-1"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {(game.hltbMainTime || game.hltbCompletionTime) && (
+                  <div className="mt-1 text-xs text-gray-400 font-mono">
+                    {game.hltbMainTime && (
+                      <p>Main: {Math.round(game.hltbMainTime / 60)}h</p>
+                    )}
+                    {game.hltbCompletionTime && (
+                      <p>100%: {Math.round(game.hltbCompletionTime / 60)}h</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {results.length === 0 && query.trim().length >= 2 && !isLoading && (

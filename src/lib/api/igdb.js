@@ -98,7 +98,7 @@ export async function searchGames(query, limit = 20, offset = 0) {
   // IGDB search syntax: search keyword cannot be combined with where clause
   // Using search alone to get best results
   const igdbQuery = `search "${query}";
-fields name, cover, first_release_date, summary;
+fields name, cover, first_release_date, summary, platforms.name;
 limit ${limit};`;
 
   console.log('[IGDB] Executing query:', igdbQuery);
@@ -201,6 +201,7 @@ export function mapIgdbGameToModel(igdbGame) {
     apiSource: 'IGDB',
     coverImageUrl: igdbGame.cover_url || null,
     releaseDate: igdbGame.first_release_date ? new Date(igdbGame.first_release_date * 1000) : null,
+    platforms: igdbGame.platforms?.map(platform => platform.name).filter(Boolean) || [],
     publisher: publisher,
     developer: developer,
     description: igdbGame.summary || igdbGame.storyline || '',
