@@ -49,6 +49,7 @@ model Game {
   apiSource       String?     // Source of API data (IGDB, RAWG, etc.)
   coverImageUrl   String?
   releaseDate     DateTime?
+  platforms       String[]    @default([])
   publisher       String?
   developer       String?
   description     String?
