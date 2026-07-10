@@ -10,12 +10,12 @@ jobs:
     if: github.event.action == 'opened'
     steps:
       - name: Create Neon Database Branch
-        uses: neondatabase/create-branch-action@v5
+        uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
           branch_name: preview/${{ github.event.pull_request.head.ref }}
           api_key: ${{ secrets.NEON_API_KEY }}
-          username: ${{ github.event.pull_request.user.login }}
+          role: neondb_owner
 
   delete-branch:
     runs-on: ubuntu-latest
