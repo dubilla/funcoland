@@ -195,4 +195,65 @@ describe('GameSearch', () => {
       });
     });
   });
+
+  describe('selecting a game', () => {
+    it('imports an external game then calls onGameSelect with the saved game', async () => {
+      jest.useRealTimers();
+      const user = userEvent.setup();
+      const onGameSelect = jest.fn();
+      const savedGame = { id: 'db-1', apiId: '99', title: 'Halo Infinite' };
+
+      global.fetch = jest.fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            games: [{ apiId: '99', title: 'Halo Infinite', coverImageUrl: null, releaseDate: null }],
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ game: savedGame }),
+        });
+
+      render(<GameSearch onGameSelect={onGameSelect} />);
+
+      await user.type(screen.getByPlaceholderText('Search for games...'), 'Halo');
+      await user.click(screen.getByRole('button', { name: 'Search' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Halo Infinite/i })).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole('button', { name: /Halo Infinite/i }));
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith('/api/games', expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ igdbId: '99' }),
+        }));
+        expect(onGameSelect).toHaveBeenCalledWith(savedGame);
+      });
+    });
+
+    it('calls onGameSelect immediately for games already in the database', async () => {
+      const { user } = setup();
+      const onGameSelect = jest.fn();
+      const existingGame = { id: '1', apiId: null, title: 'Halo', coverImageUrl: null, releaseDate: null };
+      mockFetchSuccess([existingGame]);
+
+      render(<GameSearch onGameSelect={onGameSelect} />);
+
+      await user.type(screen.getByPlaceholderText('Search for games...'), 'Halo');
+      await advanceTimers(350);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Halo$/i })).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole('button', { name: /Halo$/i }));
+
+      expect(onGameSelect).toHaveBeenCalledWith(existingGame);
+      expect(fetch).toHaveBeenCalledTimes(1);
+    });
+  });
 });
