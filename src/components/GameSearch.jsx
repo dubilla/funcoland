@@ -52,6 +52,8 @@ export default function GameSearch({ onGameSelect }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectingKey, setSelectingKey] = useState(null);
   const [error, setError] = useState(null);
   const [isPartial, setIsPartial] = useState(false);
   const debounceTimer = useRef(null);
@@ -105,8 +107,16 @@ export default function GameSearch({ onGameSelect }) {
   };
 
   const handleGameSelect = async (game) => {
+    if (isSelecting) return;
+
+    const gameKey = game.id || game.apiId;
+
     // If the game doesn't have an ID (it's from external API), add it to our DB first
     if (!game.id && game.apiId) {
+      setIsSelecting(true);
+      setSelectingKey(gameKey);
+      setError(null);
+
       try {
         const res = await fetch('/api/games', {
           method: 'POST',
@@ -125,6 +135,9 @@ export default function GameSearch({ onGameSelect }) {
       } catch (err) {
         console.error('Error adding game:', err);
         setError('Failed to add game. Please try again.');
+      } finally {
+        setIsSelecting(false);
+        setSelectingKey(null);
       }
     } else {
       onGameSelect(game);
@@ -171,32 +184,52 @@ export default function GameSearch({ onGameSelect }) {
         </div>
       )}
 
+      {isSelecting && (
+        <div className="bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-sm py-3 px-4 rounded-lg mb-4">
+          Preparing game so you can add it to your collection...
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {results.map((game) => {
           const meta = getGameMeta(game);
+          const gameKey = game.id || game.apiId;
+          const isThisSelecting = isSelecting && selectingKey === gameKey;
 
           return (
             <button
               type="button"
-              key={game.id || game.apiId}
-              className="bg-[#0a0e27]/80 border border-cyan-500/20 rounded-xl overflow-hidden hover:border-cyan-400/50 active:border-cyan-400/50 hover:scale-105 active:scale-95 cursor-pointer transition-all text-left"
+              key={gameKey}
+              disabled={isSelecting}
+              aria-busy={isThisSelecting}
+              className={`bg-[#0a0e27]/80 border rounded-xl overflow-hidden active:border-cyan-400/50 active:scale-95 cursor-pointer transition-all text-left disabled:cursor-wait [@media(hover:hover)]:hover:border-cyan-400/50 [@media(hover:hover)]:hover:scale-105 ${
+                isThisSelecting
+                  ? 'border-cyan-400/70 ring-1 ring-cyan-400/40 opacity-90'
+                  : 'border-cyan-500/20 disabled:opacity-60'
+              }`}
               onClick={() => handleGameSelect(game)}
             >
-              <div className="h-40 relative w-full bg-gray-800">
+              <div className="h-40 relative w-full bg-gray-800 pointer-events-none">
                 {game.coverImageUrl ? (
                   <Image
                     src={game.coverImageUrl}
                     alt={game.title}
                     fill
                     style={{ objectFit: 'cover' }}
+                    className="pointer-events-none"
                   />
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <span className="text-gray-500 text-sm">No image</span>
                   </div>
                 )}
+                {isThisSelecting && (
+                  <div className="absolute inset-0 bg-[#0a0e27]/70 flex items-center justify-center">
+                    <div className="w-6 h-6 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
+                  </div>
+                )}
               </div>
-              <div className="p-3">
+              <div className="p-3 pointer-events-none">
                 <h3 className="font-bold text-white truncate">{game.title}</h3>
                 {meta.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">

@@ -74,6 +74,51 @@ export async function searchGames(query) {
   return finalResults; // Return at most 20 games
 }
 
+const EMPTY_HLTB_TIMES = {
+  hltbMainTime: null,
+  hltbCompletionTime: null,
+};
+
+const HLTB_LOOKUP_TIMEOUT_MS = 2500;
+
+/**
+ * Resolve a promise with a timeout fallback.
+ * HLTB scraping can hang indefinitely and must not block adding a game.
+ * @template T
+ * @param {Promise<T>} promise
+ * @param {number} ms
+ * @param {T} fallback
+ * @returns {Promise<T>}
+ */
+export function withTimeout(promise, ms, fallback) {
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(fallback);
+      }
+    }, ms);
+
+    Promise.resolve(promise)
+      .then((value) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(value);
+        }
+      })
+      .catch(() => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(timer);
+          resolve(fallback);
+        }
+      });
+  });
+}
+
 /**
  * Add a game to our database with data from external APIs
  * @param {string} igdbId - IGDB game ID
@@ -97,18 +142,19 @@ export async function addGameFromIgdb(igdbId) {
     const igdbGame = await igdbApi.getGameDetails(igdbId);
     const gameData = igdbApi.mapIgdbGameToModel(igdbGame);
 
-    // Get HowLongToBeat data
-    const hltbData = await hltbApi.getGameCompletionTimes(gameData.title);
-
-    // Combine the data
-    const fullGameData = {
-      ...gameData,
-      ...hltbData,
-    };
+    // HLTB is best-effort only. A hung scrape previously prevented selecting/adding games.
+    const hltbData = await withTimeout(
+      hltbApi.getGameCompletionTimes(gameData.title),
+      HLTB_LOOKUP_TIMEOUT_MS,
+      EMPTY_HLTB_TIMES
+    );
 
     // Save to database
     return prisma.game.create({
-      data: fullGameData,
+      data: {
+        ...gameData,
+        ...hltbData,
+      },
     });
   } catch (error) {
     console.error('Error adding game from IGDB:', error);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import GameSearch, { getGameMeta } from '@/components/GameSearch';
 
@@ -13,6 +13,7 @@ export default function AddGame() {
   const [queues, setQueues] = useState([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [addedGames, setAddedGames] = useState([]);
+  const addPanelRef = useRef(null);
 
   // Fetch user's queues
   useEffect(() => {
@@ -39,6 +40,12 @@ export default function AddGame() {
 
     fetchQueues();
   }, []);
+
+  useEffect(() => {
+    if (!selectedGame || !addPanelRef.current) return;
+
+    addPanelRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [selectedGame]);
 
   const handleGameSelect = (game) => {
     setSelectedGame(game);
@@ -149,8 +156,8 @@ export default function AddGame() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {/* Search panel */}
-          <div className="md:col-span-3">
+          {/* Search panel — below the add form on mobile once a game is selected */}
+          <div className={`md:col-span-3 ${selectedGame ? 'order-2 md:order-1' : ''}`}>
             <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-6 mb-6">
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <span className="text-cyan-400">◆</span> Search Games
@@ -176,8 +183,11 @@ export default function AddGame() {
             )}
           </div>
 
-          {/* Add to collection panel */}
-          <div className="md:col-span-2">
+          {/* Add to collection panel — first on mobile when a game is selected */}
+          <div
+            ref={addPanelRef}
+            className={`md:col-span-2 ${selectedGame ? 'order-1 md:order-2' : ''}`}
+          >
             {selectedGame ? (
               <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-6 sticky top-4">
                 <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
