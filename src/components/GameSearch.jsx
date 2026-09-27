@@ -48,13 +48,21 @@ export function getGameMeta(game) {
   return [releaseYear, ...platforms].filter(Boolean);
 }
 
-export default function GameSearch({ onGameSelect }) {
+export default function GameSearch({ onGameSelect, selectedGame }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isPartial, setIsPartial] = useState(false);
+  const [pendingGameKey, setPendingGameKey] = useState(null);
+  const [selectedResultKey, setSelectedResultKey] = useState(null);
   const debounceTimer = useRef(null);
+
+  useEffect(() => {
+    if (!selectedGame) {
+      setSelectedResultKey(null);
+    }
+  }, [selectedGame]);
 
   const runSearch = async (searchQuery) => {
     if (!searchQuery.trim() || searchQuery.trim().length < 2) return;
@@ -105,8 +113,15 @@ export default function GameSearch({ onGameSelect }) {
   };
 
   const handleGameSelect = async (game) => {
+    const gameKey = game.id || `igdb-${game.apiId}`;
+
+    if (pendingGameKey) return;
+
     // If the game doesn't have an ID (it's from external API), add it to our DB first
     if (!game.id && game.apiId) {
+      setPendingGameKey(gameKey);
+      setError(null);
+
       try {
         const res = await fetch('/api/games', {
           method: 'POST',
@@ -121,12 +136,16 @@ export default function GameSearch({ onGameSelect }) {
         }
 
         const data = await res.json();
+        setSelectedResultKey(gameKey);
         onGameSelect(data.game);
       } catch (err) {
         console.error('Error adding game:', err);
         setError('Failed to add game. Please try again.');
+      } finally {
+        setPendingGameKey(null);
       }
     } else {
+      setSelectedResultKey(gameKey);
       onGameSelect(game);
     }
   };
@@ -174,12 +193,29 @@ export default function GameSearch({ onGameSelect }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
         {results.map((game) => {
           const meta = getGameMeta(game);
+          const gameKey = game.id || `igdb-${game.apiId}`;
+          const isPending = pendingGameKey === gameKey;
+          const isSelected = selectedResultKey === gameKey && !!selectedGame;
 
           return (
             <button
               type="button"
-              key={game.id || game.apiId}
-              className="bg-[#0a0e27]/80 border border-cyan-500/20 rounded-xl overflow-hidden hover:border-cyan-400/50 active:border-cyan-400/50 hover:scale-105 active:scale-95 cursor-pointer transition-all text-left"
+              key={gameKey}
+              aria-label={`Select ${game.title}`}
+              aria-pressed={isSelected}
+              aria-busy={isPending}
+              disabled={Boolean(pendingGameKey)}
+              className={`bg-[#0a0e27]/80 border rounded-xl overflow-hidden transition-all text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400/70 ${
+                isSelected
+                  ? 'border-purple-400 ring-1 ring-purple-400/70'
+                  : 'border-cyan-500/20 hover:border-cyan-400/50 active:border-cyan-400/50 hover:scale-105 active:scale-95'
+              } ${
+                isPending
+                  ? 'cursor-wait opacity-60'
+                  : pendingGameKey
+                    ? 'cursor-not-allowed opacity-60'
+                    : 'cursor-pointer'
+              }`}
               onClick={() => handleGameSelect(game)}
             >
               <div className="h-40 relative w-full bg-gray-800">
@@ -197,7 +233,13 @@ export default function GameSearch({ onGameSelect }) {
                 )}
               </div>
               <div className="p-3">
-                <h3 className="font-bold text-white truncate">{game.title}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-white truncate">{game.title}</h3>
+                  {isPending && (
+                    <span className="w-4 h-4 flex-shrink-0 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" aria-label="Adding game" />
+                  )}
+                </div>
+                {isPending && <p className="mt-1 text-xs text-purple-300 font-mono">Adding game...</p>}
                 {meta.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {meta.map(item => (
