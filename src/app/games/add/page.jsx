@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import GameSearch, { getGameMeta } from '@/components/GameSearch';
 
@@ -13,6 +13,7 @@ export default function AddGame() {
   const [queues, setQueues] = useState([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [addedGames, setAddedGames] = useState([]);
+  const addPanelRef = useRef(null);
 
   // Fetch user's queues
   useEffect(() => {
@@ -45,6 +46,16 @@ export default function AddGame() {
     setError(null);
     setSuccessMessage('');
   };
+
+  useEffect(() => {
+    if (!selectedGame || !window.matchMedia('(max-width: 767px)').matches) return;
+
+    const frame = requestAnimationFrame(() => {
+      addPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [selectedGame]);
 
   const handleAddToCollection = async (e) => {
     e.preventDefault();
@@ -155,7 +166,7 @@ export default function AddGame() {
               <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <span className="text-cyan-400">◆</span> Search Games
               </h2>
-              <GameSearch onGameSelect={handleGameSelect} />
+              <GameSearch onGameSelect={handleGameSelect} selectedGame={selectedGame} />
             </div>
 
             {successMessage && (
@@ -179,7 +190,7 @@ export default function AddGame() {
           {/* Add to collection panel */}
           <div className="md:col-span-2">
             {selectedGame ? (
-              <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-6 sticky top-4">
+              <div ref={addPanelRef} className="scroll-mt-4 bg-[#0f172a]/80 backdrop-blur-xl border border-purple-500/20 rounded-2xl p-6 sticky top-4">
                 <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <span className="text-purple-400">▶</span> Add to Collection
                 </h2>
